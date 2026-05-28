@@ -32,7 +32,7 @@ Deno.test("parses help", () => {
 
 Deno.test("parses version", () => {
   assertEquals(parseArgs(["--version"]).version, true);
-  assertEquals(parseArgs(["-V"]).version, true);
+  assertEquals(parseArgs(["-v"]).version, true);
   assertMatch(usage, /--version/);
 });
 

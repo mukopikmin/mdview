@@ -22,7 +22,7 @@ export const usage = `Usage: mdview <file.md> [--port <port>] [--host <host>]
 Options:
   -p, --port   Port to bind. Defaults to 3334.
   --host       Host to bind. Defaults to 127.0.0.1.
-  -V, --version
+  -v, --version
                Show version.
   -h, --help   Show this help message.
 `;
@@ -42,7 +42,7 @@ export const parseArgs = (argv: string[]): CliOptions => {
       arg !== "--help" &&
       arg !== "-h" &&
       arg !== "--version" &&
-      arg !== "-V"
+      arg !== "-v"
     ) {
       throw new CliUsageError(`Unknown option: ${arg}`);
     }
@@ -54,7 +54,7 @@ export const parseArgs = (argv: string[]): CliOptions => {
       alias: {
         h: "help",
         p: "port",
-        V: "version",
+        v: "version",
       },
       boolean: ["help", "version"],
       default: {
