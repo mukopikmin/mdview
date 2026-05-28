@@ -35,7 +35,7 @@ Deno.test("renders a comprehensive markdown fixture into a preview page", async 
   );
   assertMatch(
     html,
-    /<ul>\n<li>unordered one<\/li>\n<li>unordered <strong>two<\/strong>\n<ul>\n<li>nested unordered\n<ol>\n<li>nested ordered<\/li>\n<\/ol><\/li>\n<\/ul><\/li>\n<\/ul>/,
+    /<ul>\n<li>unordered one<\/li>\n<li>unordered <strong>two<\/strong>\n<ul>\n<li>nested unordered\n<ol>\n<li>nested ordered<\/li>\n<\/ol>\n<\/li>\n<\/ul>\n<\/li>\n<\/ul>/,
   );
   assertMatch(
     html,
@@ -44,17 +44,18 @@ Deno.test("renders a comprehensive markdown fixture into a preview page", async 
   assertMatch(html, /<blockquote>/);
   assertMatch(html, /<hr>/);
   assertMatch(html, /<table>/);
-  assertMatch(html, /<th style="text-align: center">Status<\/th>/);
-  assertMatch(html, /<td style="text-align: right">2<\/td>/);
+  assertMatch(html, /<th style="text-align:center">Status<\/th>/);
+  assertMatch(html, /<td style="text-align:right">2<\/td>/);
   assertMatch(
     html,
-    /<pre><code class="language-js">console\.log\(&quot;&lt;escaped&gt;&quot;\);<\/code><\/pre>/,
+    /<pre><code class="hljs language-js"><span class="hljs-variable language_">console<\/span>\.<span class="hljs-title function_">log<\/span>\(<span class="hljs-string">&quot;&lt;escaped&gt;&quot;<\/span>\);<\/code><\/pre>/,
   );
   assertMatch(
     html,
     /<pre class="mermaid">graph TD\n  CLI\[CLI\] --&gt; Server\[Server\]/,
   );
   assertMatch(html, /import mermaid from "\/assets\/mermaid\.esm\.min\.mjs"/);
-  assertMatch(html, /<pre><code class="language-md">```mermaid\n/);
+  assertMatch(html, /<pre><code class="hljs language-md">/);
+  assertMatch(html, /<span class="hljs-code">```mermaid\n/);
   assertMatch(html, /&lt;script&gt;alert\(&quot;nope&quot;\)&lt;\/script&gt;/);
 });

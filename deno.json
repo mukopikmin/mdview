@@ -1,4 +1,5 @@
 {
+  "nodeModulesDir": "auto",
   "tasks": {
     "start": "deno run --allow-read --allow-net src/main.ts",
     "test": "deno test --allow-read test",
@@ -8,6 +9,26 @@
   },
   "imports": {
     "@std/assert": "jsr:@std/assert@1.0.19",
-    "@std/path": "jsr:@std/path@1.1.4"
+    "@std/path": "jsr:@std/path@1.1.4",
+    "highlight.js/core": "https://esm.sh/highlight.js@11.11.1/lib/core",
+    "highlight.js/languages/bash": "https://esm.sh/highlight.js@11.11.1/lib/languages/bash",
+    "highlight.js/languages/cpp": "https://esm.sh/highlight.js@11.11.1/lib/languages/cpp",
+    "highlight.js/languages/csharp": "https://esm.sh/highlight.js@11.11.1/lib/languages/csharp",
+    "highlight.js/languages/css": "https://esm.sh/highlight.js@11.11.1/lib/languages/css",
+    "highlight.js/languages/diff": "https://esm.sh/highlight.js@11.11.1/lib/languages/diff",
+    "highlight.js/languages/go": "https://esm.sh/highlight.js@11.11.1/lib/languages/go",
+    "highlight.js/languages/java": "https://esm.sh/highlight.js@11.11.1/lib/languages/java",
+    "highlight.js/languages/javascript": "https://esm.sh/highlight.js@11.11.1/lib/languages/javascript",
+    "highlight.js/languages/json": "https://esm.sh/highlight.js@11.11.1/lib/languages/json",
+    "highlight.js/languages/markdown": "https://esm.sh/highlight.js@11.11.1/lib/languages/markdown",
+    "highlight.js/languages/php": "https://esm.sh/highlight.js@11.11.1/lib/languages/php",
+    "highlight.js/languages/python": "https://esm.sh/highlight.js@11.11.1/lib/languages/python",
+    "highlight.js/languages/ruby": "https://esm.sh/highlight.js@11.11.1/lib/languages/ruby",
+    "highlight.js/languages/rust": "https://esm.sh/highlight.js@11.11.1/lib/languages/rust",
+    "highlight.js/languages/sql": "https://esm.sh/highlight.js@11.11.1/lib/languages/sql",
+    "highlight.js/languages/typescript": "https://esm.sh/highlight.js@11.11.1/lib/languages/typescript",
+    "highlight.js/languages/xml": "https://esm.sh/highlight.js@11.11.1/lib/languages/xml",
+    "highlight.js/languages/yaml": "https://esm.sh/highlight.js@11.11.1/lib/languages/yaml",
+    "markdown-it": "https://esm.sh/markdown-it@14.1.0"
   }
 }

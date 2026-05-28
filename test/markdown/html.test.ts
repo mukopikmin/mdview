@@ -22,7 +22,7 @@ console.log("<ok>");
   assertMatch(html, /<ul>\n<li>one<\/li>\n<li>two<\/li>\n<\/ul>/);
   assertMatch(
     html,
-    /<pre><code class="language-js">console\.log\(&quot;&lt;ok&gt;&quot;\);<\/code><\/pre>/,
+    /<pre><code class="hljs language-js"><span class="hljs-variable language_">console<\/span>\.<span class="hljs-title function_">log<\/span>\(<span class="hljs-string">&quot;&lt;ok&gt;&quot;<\/span>\);<\/code><\/pre>/,
   );
 });
 
@@ -75,9 +75,9 @@ Deno.test("renders markdown tables", () => {
 
   assertMatch(html, /<table>/);
   assertMatch(html, /<th>Name<\/th>/);
-  assertMatch(html, /<th style="text-align: right">Count<\/th>/);
+  assertMatch(html, /<th style="text-align:right">Count<\/th>/);
   assertMatch(html, /<td><strong>beta<\/strong><\/td>/);
-  assertMatch(html, /<td style="text-align: right">20<\/td>/);
+  assertMatch(html, /<td style="text-align:right">20<\/td>/);
 });
 
 Deno.test("renders nested lists inside parent list items", () => {
@@ -95,8 +95,10 @@ Deno.test("renders nested lists inside parent list items", () => {
 <li>child
 <ol>
 <li>ordered child</li>
-</ol></li>
-</ul></li>
+</ol>
+</li>
+</ul>
+</li>
 <li>sibling</li>
 </ul>`,
   );
@@ -125,6 +127,7 @@ graph TD
 \`\`\`\`
 `);
 
-  assertMatch(html, /<pre><code class="language-md">```mermaid/);
+  assertMatch(html, /<pre><code class="hljs language-md">/);
+  assertMatch(html, /<span class="hljs-code">```mermaid/);
   assertMatch(html, /A --&gt; B/);
 });

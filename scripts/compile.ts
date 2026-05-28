@@ -22,6 +22,7 @@ const outputPath = parseOutputPath(Deno.args);
 const command = new Deno.Command(Deno.execPath(), {
   args: [
     "compile",
+    "--node-modules-dir=none",
     "--no-check",
     "--allow-read",
     "--allow-net",
