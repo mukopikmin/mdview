@@ -28,26 +28,6 @@ Options:
 `;
 
 export const parseArgs = (argv: string[]): CliOptions => {
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
-    if (arg === "--host" || arg === "--port" || arg === "-p") {
-      if (!argv[index + 1]) {
-        throw new CliUsageError(`${arg} requires a value.`);
-      }
-      index += 1;
-      continue;
-    }
-    if (
-      arg.startsWith("-") &&
-      arg !== "--help" &&
-      arg !== "-h" &&
-      arg !== "--version" &&
-      arg !== "-v"
-    ) {
-      throw new CliUsageError(`Unknown option: ${arg}`);
-    }
-  }
-
   let flags: ReturnType<typeof parseCliArgs>;
   try {
     flags = parseCliArgs(argv, {
@@ -70,11 +50,29 @@ export const parseArgs = (argv: string[]): CliOptions => {
     );
   }
 
+  const knownKeys = new Set([
+    "_",
+    "h",
+    "help",
+    "host",
+    "p",
+    "port",
+    "v",
+    "version",
+  ]);
+  const unknownKey = Object.keys(flags).find((key) => !knownKeys.has(key));
+  if (unknownKey) {
+    throw new CliUsageError(`Unknown option: --${unknownKey}`);
+  }
+
   if (flags._.length > 1) {
     throw new CliUsageError(
       "Only one Markdown file can be previewed at a time.",
     );
   }
+
+  if (flags.host === "") throw new CliUsageError("--host requires a value.");
+  if (flags.port === "") throw new CliUsageError("--port requires a value.");
 
   const port = Number(flags.port);
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
