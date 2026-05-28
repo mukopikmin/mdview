@@ -1,5 +1,5 @@
 #!/usr/bin/env -S deno run --allow-read --allow-net
-import { CliUsageError, parseArgs, usage } from "./cli/args.ts";
+import { CliUsageError, parseArgs, usage, version } from "./cli/args.ts";
 import { startPreviewServer } from "./preview/server.ts";
 
 const main = async (): Promise<void> => {
@@ -7,6 +7,11 @@ const main = async (): Promise<void> => {
 
   if (options.help) {
     console.log(usage);
+    return;
+  }
+
+  if (options.version) {
+    console.log(`mdview ${version}`);
     return;
   }
 

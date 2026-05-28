@@ -5,7 +5,10 @@ export type CliOptions = {
   host: string;
   port: number;
   help?: boolean;
+  version?: boolean;
 };
+
+export const version = "0.1.0";
 
 export class CliUsageError extends Error {
   constructor(message: string) {
@@ -19,6 +22,8 @@ export const usage = `Usage: mdview <file.md> [--port <port>] [--host <host>]
 Options:
   -p, --port   Port to bind. Defaults to 3334.
   --host       Host to bind. Defaults to 127.0.0.1.
+  -V, --version
+               Show version.
   -h, --help   Show this help message.
 `;
 
@@ -35,7 +40,9 @@ export const parseArgs = (argv: string[]): CliOptions => {
     if (
       arg.startsWith("-") &&
       arg !== "--help" &&
-      arg !== "-h"
+      arg !== "-h" &&
+      arg !== "--version" &&
+      arg !== "-V"
     ) {
       throw new CliUsageError(`Unknown option: ${arg}`);
     }
@@ -47,8 +54,9 @@ export const parseArgs = (argv: string[]): CliOptions => {
       alias: {
         h: "help",
         p: "port",
+        V: "version",
       },
-      boolean: ["help"],
+      boolean: ["help", "version"],
       default: {
         host: "127.0.0.1",
         port: "3334",
@@ -79,6 +87,7 @@ export const parseArgs = (argv: string[]): CliOptions => {
     port,
   };
   if (flags.help) options.help = true;
+  if (flags.version) options.version = true;
 
   return options;
 };
