@@ -2,6 +2,7 @@ export const previewThemeCss = `
       :root {
         color-scheme: light dark;
         --color-canvas: #ffffff;
+        --color-page: #f6f8fa;
         --color-canvas-subtle: #f6f8fa;
         --color-border: #d0d7de;
         --color-border-muted: #d8dee4;
@@ -10,13 +11,14 @@ export const previewThemeCss = `
         --color-link: #0969da;
         --color-code-bg: #818b981f;
         --color-accent: #0969da;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", "Noto Sans CJK JP", "Noto Sans JP", sans-serif;
+        font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", "Noto Sans JP", "Noto Sans CJK JP", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
         line-height: 1.65;
       }
 
       @media (prefers-color-scheme: dark) {
         :root {
           --color-canvas: #0d1117;
+          --color-page: #010409;
           --color-canvas-subtle: #161b22;
           --color-border: #30363d;
           --color-border-muted: #21262d;
@@ -30,29 +32,38 @@ export const previewThemeCss = `
 
       body {
         margin: 0;
-        background: var(--color-canvas);
+        background: var(--color-page);
         color: var(--color-text);
       }
 
       main {
         box-sizing: border-box;
         width: min(100%, 980px);
-        margin: 0 auto;
-        padding: 32px 32px 64px;
+        margin: 24px auto 48px;
+        border: 1px solid var(--color-border-muted);
+        border-radius: 8px;
+        background: var(--color-canvas);
+        padding: 32px 40px 64px;
+        box-shadow: 0 8px 24px #1f232814;
       }
 
       header {
-        margin-bottom: 24px;
-        padding-bottom: 16px;
+        margin: -32px -40px 32px;
         border-bottom: 1px solid var(--color-border-muted);
+        border-radius: 8px 8px 0 0;
+        background: var(--color-canvas-subtle);
+        padding: 14px 40px;
         color: var(--color-text-muted);
-        font-size: 0.875rem;
+        font-size: 0.85rem;
       }
 
-      h1, h2, h3, h4, h5, h6 {
-        line-height: 1.25;
-        margin: 24px 0 16px;
+      header a {
+        color: var(--color-text);
         font-weight: 600;
+      }
+
+      h1 {
+        font-size: 2rem;
       }
 
       h1, h2 {
@@ -60,8 +71,10 @@ export const previewThemeCss = `
         border-bottom: 1px solid var(--color-border-muted);
       }
 
-      h1 {
-        font-size: 2rem;
+      h1, h2, h3, h4, h5, h6 {
+        line-height: 1.25;
+        margin: 24px 0 16px;
+        font-weight: 600;
       }
 
       h2 {
@@ -130,12 +143,13 @@ export const previewThemeCss = `
         border-radius: 6px;
         padding: 0.2em 0.4em;
         background: var(--color-code-bg);
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "UDEV Gothic", "BIZ UDGothic", "Noto Sans Mono CJK JP", "Liberation Mono", monospace;
+        font-family: "UDEV Gothic", "BIZ UDGothic", "Noto Sans Mono CJK JP", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
         font-size: 0.85em;
       }
 
       pre {
         overflow: auto;
+        border: 1px solid var(--color-border-muted);
         border-radius: 6px;
         padding: 16px;
         background: var(--color-canvas-subtle);
@@ -168,6 +182,11 @@ export const previewThemeCss = `
         padding: 6px 13px;
       }
 
+      th {
+        background: var(--color-canvas-subtle);
+        font-weight: 600;
+      }
+
       tr {
         border-top: 1px solid var(--color-border-muted);
       }
@@ -185,6 +204,7 @@ export const previewThemeCss = `
 
       .mermaid {
         overflow: auto;
+        border: 1px solid var(--color-border-muted);
         border-radius: 6px;
         padding: 16px;
         background: var(--color-canvas-subtle);
@@ -192,7 +212,17 @@ export const previewThemeCss = `
 
       @media (max-width: 640px) {
         main {
+          margin: 0;
+          border-width: 0;
+          border-radius: 0;
           padding: 24px 16px 48px;
+          box-shadow: none;
+        }
+
+        header {
+          margin: -24px -16px 24px;
+          border-radius: 0;
+          padding: 12px 16px;
         }
       }
 `;
