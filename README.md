@@ -101,7 +101,8 @@ deno task vendor:mermaid
 ```
 
 Third-party license notices for release archives are generated from the lockfile
-and installed package license files:
+and installed package license files. `THIRD_PARTY_NOTICES.md` is generated at
+release build time and is not committed:
 
 ```sh
 npm install

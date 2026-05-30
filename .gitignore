@@ -2,6 +2,7 @@ node_modules/
 dist/
 dist-test/
 mdview
+THIRD_PARTY_NOTICES.md
 src/vendor/mermaid/
 
 npm-debug.log*
