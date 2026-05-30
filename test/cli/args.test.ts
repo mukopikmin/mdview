@@ -41,9 +41,8 @@ Deno.test("parses version", () => {
   assertMatch(usage, /--version/);
 });
 
-Deno.test("matches the package version", () => {
-  const packageJson = JSON.parse(Deno.readTextFileSync("package.json"));
-  assertEquals(version, packageJson.version);
+Deno.test("uses the development version by default", () => {
+  assertEquals(version, "0.0.0-dev");
 });
 
 Deno.test("throws usage errors for invalid options", () => {

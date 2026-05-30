@@ -1,4 +1,5 @@
 import { parseArgs as parseCliArgs } from "@std/cli/parse-args";
+export { version } from "../version.ts";
 
 export type CliOptions = {
   file: string | undefined;
@@ -7,8 +8,6 @@ export type CliOptions = {
   help?: boolean;
   version?: boolean;
 };
-
-export const version = "0.1.0";
 
 export class CliUsageError extends Error {
   constructor(message: string) {
