@@ -17,7 +17,22 @@ const parseOutputPath = (args: string[]): string => {
   return outputPath;
 };
 
+const parseTarget = (args: string[]): string | undefined => {
+  const targetIndex = args.indexOf("--target");
+  if (targetIndex === -1) return undefined;
+
+  const target = args[targetIndex + 1];
+  if (!target) {
+    console.error("Missing value for --target.");
+    Deno.exit(1);
+  }
+
+  return target;
+};
+
 const outputPath = parseOutputPath(Deno.args);
+const target = parseTarget(Deno.args);
+const targetArgs = target ? ["--target", target] : [];
 
 const command = new Deno.Command(Deno.execPath(), {
   args: [
@@ -30,6 +45,7 @@ const command = new Deno.Command(Deno.execPath(), {
     "src/vendor/mermaid/mermaid.esm.min.mjs",
     "--include",
     "src/vendor/mermaid/chunks/mermaid.esm.min",
+    ...targetArgs,
     "--output",
     outputPath,
     "src/main.ts",

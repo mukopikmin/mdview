@@ -4,7 +4,12 @@ import {
   assertMatch,
   assertThrows,
 } from "@std/assert";
-import { CliUsageError, parseArgs, usage } from "../../src/cli/args.ts";
+import {
+  CliUsageError,
+  parseArgs,
+  usage,
+  version,
+} from "../../src/cli/args.ts";
 
 Deno.test("uses the default host and port", () => {
   assertEquals(parseArgs(["README.md"]), {
@@ -34,6 +39,11 @@ Deno.test("parses version", () => {
   assertEquals(parseArgs(["--version"]).version, true);
   assertEquals(parseArgs(["-v"]).version, true);
   assertMatch(usage, /--version/);
+});
+
+Deno.test("matches the package version", () => {
+  const packageJson = JSON.parse(Deno.readTextFileSync("package.json"));
+  assertEquals(version, packageJson.version);
 });
 
 Deno.test("throws usage errors for invalid options", () => {

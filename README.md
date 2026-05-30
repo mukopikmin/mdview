@@ -29,6 +29,29 @@ deno task compile
 ./mdview README.md
 ```
 
+Or build release archives under `dist/`:
+
+```sh
+npm install
+deno task dist
+```
+
+The release build creates archives for:
+
+- `darwin-arm64`
+- `linux-x64`
+- `windows-x64`
+
+To build a single target:
+
+```sh
+deno task dist --target linux-x64
+```
+
+Each archive includes the `mdview` binary, `LICENSE`, and
+`THIRD_PARTY_NOTICES.md`. `dist/checksums.txt` and per-archive `.sha256` files
+are generated for the final archives.
+
 On macOS, you can build in a temporary directory and install the binary to
 `$HOME/.local/bin/mdview`:
 
@@ -75,4 +98,12 @@ meant to be edited by hand:
 ```sh
 npm install
 deno task vendor:mermaid
+```
+
+Third-party license notices for release archives are generated from the lockfile
+and installed package license files:
+
+```sh
+npm install
+deno task notices
 ```

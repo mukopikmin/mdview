@@ -8,7 +8,7 @@ export type CliOptions = {
   version?: boolean;
 };
 
-export const version = "0.0.1";
+export const version = "0.1.0";
 
 export class CliUsageError extends Error {
   constructor(message: string) {
