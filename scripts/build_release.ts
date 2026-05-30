@@ -4,7 +4,6 @@ type Target = {
   id: string;
   denoTarget: string;
   binaryName: string;
-  archiveType: "tar.gz" | "zip";
   native: boolean;
 };
 
@@ -22,21 +21,18 @@ const targets: Target[] = [
     id: "darwin-arm64",
     denoTarget: "aarch64-apple-darwin",
     binaryName: "mdview",
-    archiveType: "tar.gz",
     native: Deno.build.os === "darwin" && Deno.build.arch === "aarch64",
   },
   {
     id: "linux-x64",
     denoTarget: "x86_64-unknown-linux-gnu",
     binaryName: "mdview",
-    archiveType: "tar.gz",
     native: Deno.build.os === "linux" && Deno.build.arch === "x86_64",
   },
   {
     id: "windows-x64",
     denoTarget: "x86_64-pc-windows-msvc",
     binaryName: "mdview.exe",
-    archiveType: "zip",
     native: Deno.build.os === "windows" && Deno.build.arch === "x86_64",
   },
 ];
@@ -170,97 +166,6 @@ const createTar = (entries: ArchiveEntry[]): Uint8Array => {
   return concat(chunks);
 };
 
-const crcTable = new Uint32Array(256).map((_, index) => {
-  let value = index;
-  for (let bit = 0; bit < 8; bit += 1) {
-    value = (value & 1) ? (0xedb88320 ^ (value >>> 1)) : (value >>> 1);
-  }
-  return value >>> 0;
-});
-
-const crc32 = (data: Uint8Array): number => {
-  let crc = 0xffffffff;
-  for (const byte of data) {
-    crc = crcTable[(crc ^ byte) & 0xff] ^ (crc >>> 8);
-  }
-  return (crc ^ 0xffffffff) >>> 0;
-};
-
-const u16 = (value: number): Uint8Array =>
-  new Uint8Array([value & 0xff, (value >>> 8) & 0xff]);
-
-const u32 = (value: number): Uint8Array =>
-  new Uint8Array([
-    value & 0xff,
-    (value >>> 8) & 0xff,
-    (value >>> 16) & 0xff,
-    (value >>> 24) & 0xff,
-  ]);
-
-const createZip = (entries: ArchiveEntry[]): Uint8Array => {
-  const chunks: Uint8Array[] = [];
-  const centralDirectory: Uint8Array[] = [];
-  let offset = 0;
-
-  for (const entry of entries) {
-    const name = encoder.encode(entry.path);
-    const crc = crc32(entry.data);
-    const localHeader = concat([
-      u32(0x04034b50),
-      u16(20),
-      u16(0),
-      u16(0),
-      u16(0),
-      u16(33),
-      u32(crc),
-      u32(entry.data.length),
-      u32(entry.data.length),
-      u16(name.length),
-      u16(0),
-      name,
-    ]);
-    chunks.push(localHeader, entry.data);
-
-    centralDirectory.push(concat([
-      u32(0x02014b50),
-      u16(20),
-      u16(20),
-      u16(0),
-      u16(0),
-      u16(0),
-      u16(33),
-      u32(crc),
-      u32(entry.data.length),
-      u32(entry.data.length),
-      u16(name.length),
-      u16(0),
-      u16(0),
-      u16(0),
-      u16(0),
-      u32(entry.mode << 16),
-      u32(offset),
-      name,
-    ]));
-
-    offset += localHeader.length + entry.data.length;
-  }
-
-  const centralDirectoryOffset = offset;
-  const centralDirectoryData = concat(centralDirectory);
-  const end = concat([
-    u32(0x06054b50),
-    u16(0),
-    u16(0),
-    u16(entries.length),
-    u16(entries.length),
-    u32(centralDirectoryData.length),
-    u32(centralDirectoryOffset),
-    u16(0),
-  ]);
-
-  return concat([...chunks, centralDirectoryData, end]);
-};
-
 const sha256 = async (path: string): Promise<string> => {
   const hash = await crypto.subtle.digest("SHA-256", await Deno.readFile(path));
   return [...new Uint8Array(hash)].map((byte) =>
@@ -292,11 +197,9 @@ const archive = async (
     },
   ];
 
-  const archiveName = `mdview-v${version}-${target.id}.${target.archiveType}`;
+  const archiveName = `mdview-v${version}-${target.id}.tar.gz`;
   const archivePath = join("dist", archiveName);
-  const data = target.archiveType === "tar.gz"
-    ? await gzip(createTar(entries))
-    : createZip(entries);
+  const data = await gzip(createTar(entries));
 
   await Deno.writeFile(archivePath, data);
   return archivePath;

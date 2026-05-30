@@ -29,7 +29,7 @@ deno task compile --version 0.1.0
 ./mdview README.md
 ```
 
-Or build release archives under `dist/`:
+Or build release `tar.gz` archives under `dist/`:
 
 ```sh
 npm install
@@ -48,7 +48,7 @@ To build a single target:
 deno task dist --version 0.1.0 --target linux-x64
 ```
 
-Each archive includes the `mdview` binary, `LICENSE`, and
+Each `tar.gz` archive includes the `mdview` binary, `LICENSE`, and
 `THIRD_PARTY_NOTICES.md`. `dist/checksums.txt` and per-archive `.sha256` files
 are generated for the final archives.
 
