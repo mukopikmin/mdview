@@ -29,7 +29,7 @@ deno task compile --version 0.1.0
 ./mdview README.md
 ```
 
-Or build release `tar.gz` archives under `dist/`:
+Or build release archives under `dist/`:
 
 ```sh
 npm install
@@ -48,9 +48,13 @@ To build a single target:
 deno task dist --version 0.1.0 --target linux-x64
 ```
 
-Each `tar.gz` archive includes the `mdview` binary, `LICENSE`, and
-`THIRD_PARTY_NOTICES.md`. `dist/checksums.txt` and per-archive `.sha256` files
-are generated for the final archives.
+Each archive includes the `mdview` binary, `LICENSE`, and
+`THIRD_PARTY_NOTICES.md`. macOS and Linux targets are packaged as `.tar.gz`;
+Windows is packaged as `.zip`. `dist/checksums.txt` and per-archive `.sha256`
+files are generated for the final archives.
+
+The release build uses the system `tar` command for `.tar.gz` archives and the
+system `zip` command for the Windows archive.
 
 On macOS, you can build in a temporary directory and install the binary to
 `$HOME/.local/bin/mdview`:

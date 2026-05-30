@@ -4,16 +4,10 @@ type Target = {
   id: string;
   denoTarget: string;
   binaryName: string;
+  archiveType: "tar.gz" | "zip";
   native: boolean;
 };
 
-type ArchiveEntry = {
-  path: string;
-  data: Uint8Array;
-  mode: number;
-};
-
-const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
 const targets: Target[] = [
@@ -21,32 +15,70 @@ const targets: Target[] = [
     id: "darwin-arm64",
     denoTarget: "aarch64-apple-darwin",
     binaryName: "mdview",
+    archiveType: "tar.gz",
     native: Deno.build.os === "darwin" && Deno.build.arch === "aarch64",
   },
   {
     id: "linux-x64",
     denoTarget: "x86_64-unknown-linux-gnu",
     binaryName: "mdview",
+    archiveType: "tar.gz",
     native: Deno.build.os === "linux" && Deno.build.arch === "x86_64",
   },
   {
     id: "windows-x64",
     denoTarget: "x86_64-pc-windows-msvc",
     binaryName: "mdview.exe",
+    archiveType: "zip",
     native: Deno.build.os === "windows" && Deno.build.arch === "x86_64",
   },
 ];
 
 const verificationPort = 39731;
 
-const run = async (args: string[]): Promise<void> => {
-  const result = await new Deno.Command(Deno.execPath(), {
+const run = async (
+  command: string,
+  args: string[],
+  cwd?: string,
+): Promise<void> => {
+  const result = await new Deno.Command(command, {
     args,
+    cwd,
     stdout: "inherit",
     stderr: "inherit",
   }).output();
 
   if (!result.success) Deno.exit(result.code);
+};
+
+const commandExists = async (command: string): Promise<boolean> => {
+  try {
+    const result = await new Deno.Command(command, {
+      args: command === "zip" ? ["-v"] : ["--version"],
+      stdout: "null",
+      stderr: "null",
+    }).output();
+    return result.success;
+  } catch (error) {
+    if (error instanceof Deno.errors.NotFound) return false;
+    throw error;
+  }
+};
+
+const ensureArchiveCommands = async (
+  releaseTargets: Target[],
+): Promise<void> => {
+  const requiredCommands = new Set(
+    releaseTargets.map((target) =>
+      target.archiveType === "zip" ? "zip" : "tar"
+    ),
+  );
+  for (const command of requiredCommands) {
+    if (!(await commandExists(command))) {
+      console.error(`Missing required archive command: ${command}`);
+      Deno.exit(1);
+    }
+  }
 };
 
 const parseSelectedTargets = (args: string[]): Set<string> | undefined => {
@@ -100,72 +132,6 @@ const ensureKnownTargets = (selected: Set<string> | undefined): void => {
   }
 };
 
-const concat = (chunks: Uint8Array[]): Uint8Array => {
-  const length = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
-  const output = new Uint8Array(length);
-  let offset = 0;
-  for (const chunk of chunks) {
-    output.set(chunk, offset);
-    offset += chunk.length;
-  }
-  return output;
-};
-
-const gzip = async (data: Uint8Array): Promise<Uint8Array> => {
-  const stream = new Blob([data.buffer as ArrayBuffer]).stream().pipeThrough(
-    new CompressionStream("gzip"),
-  );
-  return new Uint8Array(await new Response(stream).arrayBuffer());
-};
-
-const writeAscii = (
-  buffer: Uint8Array,
-  offset: number,
-  length: number,
-  value: string,
-): void => {
-  const bytes = encoder.encode(value);
-  buffer.set(bytes.slice(0, length), offset);
-};
-
-const writeOctal = (
-  buffer: Uint8Array,
-  offset: number,
-  length: number,
-  value: number,
-): void => {
-  const text = value.toString(8).padStart(length - 1, "0");
-  writeAscii(buffer, offset, length, text.slice(-length + 1));
-};
-
-const createTar = (entries: ArchiveEntry[]): Uint8Array => {
-  const chunks: Uint8Array[] = [];
-  for (const entry of entries) {
-    const header = new Uint8Array(512);
-    writeAscii(header, 0, 100, entry.path);
-    writeOctal(header, 100, 8, entry.mode);
-    writeOctal(header, 108, 8, 0);
-    writeOctal(header, 116, 8, 0);
-    writeOctal(header, 124, 12, entry.data.length);
-    writeOctal(header, 136, 12, 0);
-    header.fill(0x20, 148, 156);
-    header[156] = "0".charCodeAt(0);
-    writeAscii(header, 257, 6, "ustar");
-    writeAscii(header, 263, 2, "00");
-
-    const checksum = header.reduce((sum, byte) => sum + byte, 0);
-    writeAscii(header, 148, 8, checksum.toString(8).padStart(6, "0"));
-    header[154] = 0;
-    header[155] = 0x20;
-
-    chunks.push(header, entry.data);
-    const padding = (512 - (entry.data.length % 512)) % 512;
-    if (padding) chunks.push(new Uint8Array(padding));
-  }
-  chunks.push(new Uint8Array(1024));
-  return concat(chunks);
-};
-
 const sha256 = async (path: string): Promise<string> => {
   const hash = await crypto.subtle.digest("SHA-256", await Deno.readFile(path));
   return [...new Uint8Array(hash)].map((byte) =>
@@ -179,30 +145,35 @@ const archive = async (
   binaryPath: string,
 ): Promise<string> => {
   const root = `mdview-v${version}-${target.id}`;
-  const entries: ArchiveEntry[] = [
-    {
-      path: `${root}/${target.binaryName}`,
-      data: await Deno.readFile(binaryPath),
-      mode: target.binaryName.endsWith(".exe") ? 0o644 : 0o755,
-    },
-    {
-      path: `${root}/LICENSE`,
-      data: await Deno.readFile("LICENSE"),
-      mode: 0o644,
-    },
-    {
-      path: `${root}/THIRD_PARTY_NOTICES.md`,
-      data: await Deno.readFile("THIRD_PARTY_NOTICES.md"),
-      mode: 0o644,
-    },
-  ];
+  const stagingDir = await Deno.makeTempDir({
+    prefix: `mdview-release-${target.id}-`,
+  });
+  const rootDir = join(stagingDir, root);
 
-  const archiveName = `mdview-v${version}-${target.id}.tar.gz`;
-  const archivePath = join("dist", archiveName);
-  const data = await gzip(createTar(entries));
+  try {
+    await Deno.mkdir(rootDir);
+    const stagedBinaryPath = join(rootDir, target.binaryName);
+    await Deno.copyFile(binaryPath, stagedBinaryPath);
+    if (!target.binaryName.endsWith(".exe")) {
+      await Deno.chmod(stagedBinaryPath, 0o755);
+    }
+    await Deno.copyFile("LICENSE", join(rootDir, "LICENSE"));
+    await Deno.copyFile(
+      "THIRD_PARTY_NOTICES.md",
+      join(rootDir, "THIRD_PARTY_NOTICES.md"),
+    );
 
-  await Deno.writeFile(archivePath, data);
-  return archivePath;
+    const archiveName = `mdview-v${version}-${target.id}.${target.archiveType}`;
+    const archivePath = join(Deno.cwd(), "dist", archiveName);
+    if (target.archiveType === "zip") {
+      await run("zip", ["-qr", archivePath, root], stagingDir);
+    } else {
+      await run("tar", ["-czf", archivePath, "-C", stagingDir, root]);
+    }
+    return archivePath;
+  } finally {
+    await Deno.remove(stagingDir, { recursive: true }).catch(() => undefined);
+  }
 };
 
 const readLineUntilPreview = async (
@@ -297,8 +268,9 @@ const releaseTargets = targets.filter((target) =>
 );
 
 await Deno.mkdir("dist", { recursive: true });
-await run(["task", "vendor:mermaid"]);
-await run(["task", "notices"]);
+await ensureArchiveCommands(releaseTargets);
+await run(Deno.execPath(), ["task", "vendor:mermaid"]);
+await run(Deno.execPath(), ["task", "notices"]);
 
 const checksums: string[] = [];
 
@@ -307,7 +279,7 @@ for (const target of releaseTargets) {
   const binaryPath = join(buildDir, target.binaryName);
 
   try {
-    await run([
+    await run(Deno.execPath(), [
       "run",
       "--allow-read",
       "--allow-write",
