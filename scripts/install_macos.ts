@@ -25,6 +25,7 @@ const installDir = `${home}/.local/bin`;
 const installPath = `${installDir}/mdview`;
 const buildDir = await Deno.makeTempDir({ prefix: "mdview-" });
 const buildPath = `${buildDir}/mdview`;
+const compileArgs = Deno.args.length ? Deno.args : [];
 
 try {
   await run(["task", "vendor:mermaid"]);
@@ -34,6 +35,7 @@ try {
     "--allow-write",
     "--allow-run=deno",
     "scripts/compile.ts",
+    ...compileArgs,
     "--output",
     buildPath,
   ]);

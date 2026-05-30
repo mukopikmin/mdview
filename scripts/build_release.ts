@@ -1,9 +1,5 @@
 import { basename, join } from "@std/path";
 
-type PackageJson = {
-  version: string;
-};
-
 type Target = {
   id: string;
   denoTarget: string;
@@ -57,13 +53,6 @@ const run = async (args: string[]): Promise<void> => {
   if (!result.success) Deno.exit(result.code);
 };
 
-const readPackageVersion = async (): Promise<string> => {
-  const packageJson: PackageJson = JSON.parse(
-    await Deno.readTextFile("package.json"),
-  );
-  return packageJson.version;
-};
-
 const parseSelectedTargets = (args: string[]): Set<string> | undefined => {
   const selected = new Set<string>();
   for (let index = 0; index < args.length; index += 1) {
@@ -77,6 +66,29 @@ const parseSelectedTargets = (args: string[]): Set<string> | undefined => {
     index += 1;
   }
   return selected.size ? selected : undefined;
+};
+
+const parseVersion = (args: string[]): string => {
+  const versionIndex = args.indexOf("--version");
+  if (versionIndex === -1) {
+    console.error("Missing --version <version> for release archive names.");
+    Deno.exit(1);
+  }
+
+  const version = args[versionIndex + 1];
+  if (!version) {
+    console.error("Missing value for --version.");
+    Deno.exit(1);
+  }
+
+  if (
+    !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.test(version)
+  ) {
+    console.error(`Invalid version: ${version}`);
+    Deno.exit(1);
+  }
+
+  return version;
 };
 
 const ensureKnownTargets = (selected: Set<string> | undefined): void => {
@@ -376,7 +388,7 @@ const verifyNativeBinary = async (binaryPath: string): Promise<void> => {
 const selected = parseSelectedTargets(Deno.args);
 ensureKnownTargets(selected);
 
-const version = await readPackageVersion();
+const version = parseVersion(Deno.args);
 const releaseTargets = targets.filter((target) =>
   selected ? selected.has(target.id) : true
 );
@@ -398,6 +410,8 @@ for (const target of releaseTargets) {
       "--allow-write",
       "--allow-run=deno",
       "scripts/compile.ts",
+      "--version",
+      version,
       "--target",
       target.denoTarget,
       "--output",

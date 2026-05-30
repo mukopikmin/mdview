@@ -25,7 +25,7 @@ Or compile a standalone binary:
 
 ```sh
 npm install
-deno task compile
+deno task compile --version 0.1.0
 ./mdview README.md
 ```
 
@@ -33,7 +33,7 @@ Or build release archives under `dist/`:
 
 ```sh
 npm install
-deno task dist
+deno task dist --version 0.1.0
 ```
 
 The release build creates archives for:
@@ -45,7 +45,7 @@ The release build creates archives for:
 To build a single target:
 
 ```sh
-deno task dist --target linux-x64
+deno task dist --version 0.1.0 --target linux-x64
 ```
 
 Each archive includes the `mdview` binary, `LICENSE`, and
@@ -57,7 +57,7 @@ On macOS, you can build in a temporary directory and install the binary to
 
 ```sh
 npm install
-deno task install:mac
+deno task install:mac --version 0.1.0
 ```
 
 Options:
