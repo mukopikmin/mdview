@@ -25,8 +25,19 @@ ${previewThemeCss}
       ${body}
     </main>
     ${renderMermaidScript(body)}
+    ${renderHotReloadScript()}
   </body>
 </html>`;
+
+const renderHotReloadScript = (): string =>
+  `<script>
+      (() => {
+        const events = new EventSource("/__mdview/events");
+        events.addEventListener("reload", () => {
+          window.location.reload();
+        });
+      })();
+    </script>`;
 
 const renderMermaidScript = (body: string): string => {
   if (!body.includes('class="mermaid"')) return "";

@@ -44,7 +44,8 @@ mdview README.md --port 4000 --host 127.0.0.1
 ```
 
 The server reads the Markdown file on each request, so refreshing the page shows
-recent edits.
+recent edits. The browser preview also reloads automatically when the Markdown
+file changes.
 
 ## Supported Markdown
 
