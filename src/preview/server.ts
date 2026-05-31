@@ -1,4 +1,4 @@
-import { basename, resolve, toFileUrl } from "@std/path";
+import { basename, dirname, resolve, toFileUrl } from "@std/path";
 import { escapeHtml, renderMarkdown } from "../markdown/html.ts";
 import { readMermaidAsset } from "./assets.ts";
 import { renderPreviewPage } from "./page.ts";
@@ -15,23 +15,70 @@ export type StartedPreviewServer = {
   server: Deno.HttpServer<Deno.NetAddr>;
 };
 
-export const buildFileVersion = (fileStat: Deno.FileInfo): string =>
-  `${fileStat.mtime?.getTime() ?? 0}:${fileStat.size}`;
+const reloadEvent = new TextEncoder().encode("event: reload\ndata: {}\n\n");
+
+export const createHotReloadEventStream = (
+  filePath: string,
+  signal: AbortSignal,
+): ReadableStream<Uint8Array> => {
+  let watcher: Deno.FsWatcher | undefined;
+  let close: (() => void) | undefined;
+
+  return new ReadableStream({
+    start(controller) {
+      watcher = Deno.watchFs(dirname(filePath));
+
+      close = () => {
+        watcher?.close();
+        try {
+          controller.close();
+        } catch {
+          // The stream may already be closed if the client disconnected.
+        }
+      };
+      signal.addEventListener("abort", close, { once: true });
+
+      (async () => {
+        try {
+          for await (const event of watcher) {
+            if (
+              event.kind === "access" ||
+              !event.paths.some((path) => resolve(path) === filePath)
+            ) {
+              continue;
+            }
+
+            controller.enqueue(reloadEvent);
+          }
+        } catch (error) {
+          if (!signal.aborted) {
+            controller.error(error);
+          }
+        } finally {
+          if (close) {
+            signal.removeEventListener("abort", close);
+          }
+        }
+      })();
+    },
+    cancel() {
+      close?.();
+    },
+  });
+};
 
 export const createPreviewHandler =
   (filePath: string): Deno.ServeHandler => async (request) => {
     try {
       const requestUrl = new URL(request.url);
-      if (requestUrl.pathname === "/__mdview/status") {
-        const fileStat = await Deno.stat(filePath).catch(() => undefined);
+      if (requestUrl.pathname === "/__mdview/events") {
         return new Response(
-          JSON.stringify({
-            version: fileStat?.isFile ? buildFileVersion(fileStat) : "missing",
-          }),
+          createHotReloadEventStream(filePath, request.signal),
           {
             headers: {
-              "content-type": "application/json; charset=utf-8",
+              "content-type": "text/event-stream; charset=utf-8",
               "cache-control": "no-store",
+              "connection": "keep-alive",
             },
           },
         );
