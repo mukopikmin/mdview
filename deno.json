@@ -3,8 +3,10 @@
   "tasks": {
     "start": "deno run --allow-read --allow-net --allow-run src/main.ts",
     "test": "deno test --allow-read test",
+    "notices": "deno run --allow-read --allow-write scripts/generate_third_party_notices.ts",
     "vendor:mermaid": "deno run --allow-read --allow-write scripts/vendor_mermaid.ts",
     "compile": "deno task vendor:mermaid && deno run --allow-read --allow-write --allow-run=deno scripts/compile.ts",
+    "dist": "deno run --allow-read --allow-write --allow-run --allow-net=127.0.0.1:39731 scripts/build_release.ts",
     "install:mac": "deno run --allow-read --allow-write --allow-run=deno --allow-env=HOME scripts/install_macos.ts"
   },
   "imports": {
