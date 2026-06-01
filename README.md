@@ -89,30 +89,30 @@ For native targets, the release build starts the compiled binary on
 
 ## Supported Markdown
 
-| Feature | Status | Notes |
-| --- | --- | --- |
-| Headings and paragraphs | Supported | Rendered through Markdown-it. |
-| Bold and italic emphasis | Supported | `**bold**` and `_italic_` render as emphasis. |
-| Unordered, ordered, and nested lists | Supported | Nested unordered and ordered lists are preserved. |
-| Blockquotes and horizontal rules | Supported | Standard quote blocks and thematic breaks render normally. |
-| Links and images | Supported | Link and image titles are preserved. |
-| Reference-style links and images | Supported | Link definitions such as `[id]: https://example.com` are resolved. |
-| Inline code, indented code, and fenced code blocks | Supported | Code content is escaped by default. |
-| Hard line breaks | Supported | Standard Markdown hard breaks render as line breaks. |
-| Backslash escapes and HTML entities | Supported | Markdown escapes and entities are handled by Markdown-it. |
-| Heading anchor links | Supported | Headings get stable `id` attributes and clickable anchors. |
-| Plain URL autolinks | Supported | Plain URLs are converted to links. |
-| Task list checkboxes | Supported | `- [ ]` and `- [x]` render as disabled checkboxes. |
-| Strikethrough | Supported | `~~deleted~~` renders as deleted text. |
-| GitHub-style tables | Supported | Table alignment markers are preserved. |
-| Syntax highlighting | Supported | Common code fence languages are highlighted with highlight.js. |
-| Mermaid diagrams | Supported | Fenced `mermaid` code blocks render in the browser. |
-| Raw HTML | Not supported | Raw HTML is escaped for safer previews. |
-| Footnotes | Not supported | No footnote plugin is enabled. |
-| Definition lists | Not supported | No definition list plugin is enabled. |
-| Math or LaTeX | Not supported | Math rendering is not bundled. |
-| Front matter | Not supported | YAML front matter is rendered as Markdown text. |
-| Generated table of contents | Not supported | Heading anchors are generated, but no TOC is built. |
+| Feature                                            | Status        | Notes                                                              |
+| -------------------------------------------------- | ------------- | ------------------------------------------------------------------ |
+| Headings and paragraphs                            | Supported     | Rendered through Markdown-it.                                      |
+| Bold and italic emphasis                           | Supported     | `**bold**` and `_italic_` render as emphasis.                      |
+| Unordered, ordered, and nested lists               | Supported     | Nested unordered and ordered lists are preserved.                  |
+| Blockquotes and horizontal rules                   | Supported     | Standard quote blocks and thematic breaks render normally.         |
+| Links and images                                   | Supported     | Link and image titles are preserved.                               |
+| Reference-style links and images                   | Supported     | Link definitions such as `[id]: https://example.com` are resolved. |
+| Inline code, indented code, and fenced code blocks | Supported     | Code content is escaped by default.                                |
+| Hard line breaks                                   | Supported     | Standard Markdown hard breaks render as line breaks.               |
+| Backslash escapes and HTML entities                | Supported     | Markdown escapes and entities are handled by Markdown-it.          |
+| Heading anchor links                               | Supported     | Headings get stable `id` attributes and clickable anchors.         |
+| Plain URL autolinks                                | Supported     | Plain URLs are converted to links.                                 |
+| Task list checkboxes                               | Supported     | `- [ ]` and `- [x]` render as disabled checkboxes.                 |
+| Strikethrough                                      | Supported     | `~~deleted~~` renders as deleted text.                             |
+| GitHub-style tables                                | Supported     | Table alignment markers are preserved.                             |
+| Syntax highlighting                                | Supported     | Common code fence languages are highlighted with highlight.js.     |
+| Mermaid diagrams                                   | Supported     | Fenced `mermaid` code blocks render in the browser.                |
+| Raw HTML                                           | Not supported | Raw HTML is escaped for safer previews.                            |
+| Footnotes                                          | Not supported | No footnote plugin is enabled.                                     |
+| Definition lists                                   | Not supported | No definition list plugin is enabled.                              |
+| Math or LaTeX                                      | Not supported | Math rendering is not bundled.                                     |
+| Front matter                                       | Not supported | YAML front matter is rendered as Markdown text.                    |
+| Generated table of contents                        | Not supported | Heading anchors are generated, but no TOC is built.                |
 
 Mermaid rendering is served from vendored local assets when a page contains a
 Mermaid block.
