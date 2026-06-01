@@ -85,15 +85,18 @@ file changes.
 
 ## Supported Markdown
 
-- headings, paragraphs, lists, blockquotes, links, images, inline code, and
-  fenced code blocks
-- heading anchor links
-- plain URL autolinks
-- task list checkboxes
-- strikethrough
-- GitHub-style tables
-- syntax highlighting for common code fence languages
-- Mermaid diagrams through fenced `mermaid` code blocks
+| Feature | Status | Notes |
+| --- | --- | --- |
+| Headings, paragraphs, lists, blockquotes, links, and images | Supported | Rendered through Markdown-it. |
+| Inline code and fenced code blocks | Supported | Fenced code blocks are escaped by default. |
+| Heading anchor links | Supported | Headings get stable `id` attributes and clickable anchors. |
+| Plain URL autolinks | Supported | Plain URLs are converted to links. |
+| Task list checkboxes | Supported | `- [ ]` and `- [x]` render as disabled checkboxes. |
+| Strikethrough | Supported | `~~deleted~~` renders as deleted text. |
+| GitHub-style tables | Supported | Table alignment markers are preserved. |
+| Syntax highlighting | Supported | Common code fence languages are highlighted with highlight.js. |
+| Mermaid diagrams | Supported | Fenced `mermaid` code blocks render in the browser. |
+| Raw HTML | Not supported | Raw HTML is escaped for safer previews. |
 
 Example:
 
