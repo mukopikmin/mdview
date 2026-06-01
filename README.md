@@ -5,6 +5,27 @@
 Run it with a Markdown file path, and it starts a local HTTP server that renders
 the file as HTML, then opens the preview in your default browser.
 
+## Install
+
+On macOS, you can build in a temporary directory and install the binary to
+`$HOME/.local/bin/mdview`:
+
+```sh
+npm install
+deno task install:mac --version 0.1.0
+```
+
+Or compile a standalone binary in the project directory:
+
+```sh
+npm install
+deno task compile --version 0.1.0
+./mdview README.md
+```
+
+If `--version` is omitted, the compiled binary reports the development version
+`0.0.0-dev`. Pass the release version explicitly when building release binaries.
+
 ## Usage
 
 After compiling or installing the CLI:
@@ -21,18 +42,20 @@ During development, you can run the CLI with Deno:
 deno task start README.md
 ```
 
-Or compile a standalone binary:
+Options:
 
 ```sh
-npm install
-deno task compile --version 0.1.0
-./mdview README.md
+mdview README.md --port 4000 --host 127.0.0.1
+mdview README.md --no-open
 ```
 
-If `--version` is omitted, the compiled binary reports the development version
-`0.0.0-dev`. Pass the release version explicitly when building release binaries.
+The server reads the Markdown file on each request, so refreshing the page shows
+recent edits. The browser preview also reloads automatically when the Markdown
+file changes.
 
-Or build release archives under `dist/`:
+## Release Archives
+
+Build release archives under `dist/`:
 
 ```sh
 npm install
@@ -63,25 +86,6 @@ target.
 
 For native targets, the release build starts the compiled binary on
 `127.0.0.1:39731` to verify that bundled Mermaid assets can be served.
-
-On macOS, you can build in a temporary directory and install the binary to
-`$HOME/.local/bin/mdview`:
-
-```sh
-npm install
-deno task install:mac --version 0.1.0
-```
-
-Options:
-
-```sh
-mdview README.md --port 4000 --host 127.0.0.1
-mdview README.md --no-open
-```
-
-The server reads the Markdown file on each request, so refreshing the page shows
-recent edits. The browser preview also reloads automatically when the Markdown
-file changes.
 
 ## Supported Markdown
 
