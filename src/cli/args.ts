@@ -3,6 +3,7 @@ import { parseArgs as parseCliArgs } from "@std/cli/parse-args";
 export type CliOptions = {
   file: string | undefined;
   host: string;
+  keepAlive: boolean;
   open: boolean;
   port: number;
   help?: boolean;
@@ -19,12 +20,13 @@ export class CliUsageError extends Error {
 }
 
 export const usage =
-  `Usage: mdview <file.md> [--port <port>] [--host <host>] [--no-open]
+  `Usage: mdview <file.md> [--port <port>] [--host <host>] [--no-open] [--keep-alive]
 
 Options:
   -p, --port   Port to bind. Defaults to 3334.
   --host       Host to bind. Defaults to 127.0.0.1.
   --no-open    Do not open the preview in your browser automatically.
+  --keep-alive Keep the server running after the browser tab is closed.
   -v, --version
                Show version.
   -h, --help   Show this help message.
@@ -39,7 +41,7 @@ export const parseArgs = (argv: string[]): CliOptions => {
         p: "port",
         v: "version",
       },
-      boolean: ["help", "no-open", "version"],
+      boolean: ["help", "keep-alive", "no-open", "version"],
       default: {
         host: "127.0.0.1",
         port: "3334",
@@ -73,6 +75,7 @@ export const parseArgs = (argv: string[]): CliOptions => {
   const options: CliOptions = {
     file: flags._[0]?.toString(),
     host: flags.host?.toString() ?? "127.0.0.1",
+    keepAlive: Boolean(flags["keep-alive"]),
     open: !flags["no-open"],
     port,
   };

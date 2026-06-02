@@ -24,6 +24,7 @@ const main = async (): Promise<void> => {
   const preview = await startPreviewServer({
     file: options.file,
     host: options.host,
+    keepAlive: options.keepAlive,
     port: options.port,
   });
 

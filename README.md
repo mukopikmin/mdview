@@ -42,11 +42,13 @@ Options:
 ```sh
 mdview README.md --port 4000 --host 127.0.0.1
 mdview README.md --no-open
+mdview README.md --keep-alive
 ```
 
 The server reads the Markdown file on each request, so refreshing the page shows
 recent edits. The browser preview also reloads automatically when the Markdown
-file changes.
+file changes. By default, the server stops after the browser tab is closed; use
+`--keep-alive` to keep it running.
 
 ## Supported Markdown
 

@@ -7,6 +7,7 @@ import { renderPreviewPage } from "./page.ts";
 export type PreviewServerOptions = {
   file: string;
   host: string;
+  keepAlive?: boolean;
   port: number;
 };
 
@@ -216,10 +217,12 @@ export const startPreviewServer = async (
     },
     createPreviewHandler(filePath, {
       onEventStreamOpen: () => {
+        if (options.keepAlive) return;
         eventStreamCount += 1;
         cancelShutdown();
       },
       onEventStreamClose: () => {
+        if (options.keepAlive) return;
         eventStreamCount = Math.max(0, eventStreamCount - 1);
         scheduleShutdown();
       },
