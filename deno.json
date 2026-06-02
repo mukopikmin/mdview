@@ -1,11 +1,10 @@
 {
-  "nodeModulesDir": "auto",
+  "nodeModulesDir": "none",
   "tasks": {
-    "start": "deno run --allow-read --allow-net --allow-run src/main.ts",
-    "test": "deno test --allow-read test",
-    "vendor:mermaid": "deno run --allow-read --allow-write scripts/vendor_mermaid.ts",
-    "compile": "deno task vendor:mermaid && deno run --allow-read --allow-write --allow-run=deno scripts/compile.ts",
-    "install:mac": "deno run --allow-read --allow-write --allow-run=deno --allow-env=HOME scripts/install_macos.ts"
+    "start": "npm run build:client && DENO_NO_PACKAGE_JSON=1 deno run --allow-read --allow-net --allow-run src/main.ts",
+    "test": "npm run build:client && DENO_NO_PACKAGE_JSON=1 deno test --allow-read test",
+    "compile": "npm run build:client && DENO_NO_PACKAGE_JSON=1 deno run --allow-read --allow-write --allow-run=deno scripts/compile.ts",
+    "install:mac": "npm run build:client && DENO_NO_PACKAGE_JSON=1 deno run --allow-read --allow-write --allow-run=deno --allow-env=HOME scripts/install_macos.ts"
   },
   "imports": {
     "@std/assert": "jsr:@std/assert@1.0.19",

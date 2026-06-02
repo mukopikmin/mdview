@@ -2,7 +2,7 @@ node_modules/
 dist/
 dist-test/
 mdview
-src/vendor/mermaid/
+src/preview/static/
 
 npm-debug.log*
 .DS_Store

@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "description": "Preview a Markdown file in a local browser-friendly server.",
   "private": true,
-  "devDependencies": {
-    "mermaid": "11.15.0"
+  "scripts": {
+    "build:client": "npm --prefix src/preview/client run build",
+    "postinstall": "npm install --prefix src/preview/client",
+    "test": "npm --prefix src/preview/client test"
   }
 }

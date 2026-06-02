@@ -1,8 +1,8 @@
-import { basename, dirname, resolve, toFileUrl } from "@std/path";
+import { basename, resolve, toFileUrl } from "@std/path";
 import { formatLogMessage, logError, logInfo } from "../log.ts";
-import { escapeHtml, renderMarkdown } from "../markdown/html.ts";
-import { readMermaidAsset } from "./assets.ts";
-import { renderPreviewPage } from "./page.ts";
+import { readPreviewAsset } from "./assets.ts";
+import { createHotReloadEventStream } from "./events.ts";
+export { formatPreviewReloadLog } from "./events.ts";
 
 export type PreviewServerOptions = {
   file: string;
@@ -17,24 +17,9 @@ export type StartedPreviewServer = {
   server: Deno.HttpServer<Deno.NetAddr>;
 };
 
-type PreviewHandlerOptions = {
+export type PreviewHandlerOptions = {
   onEventStreamClose?: () => void;
   onEventStreamOpen?: () => void;
-};
-
-const reloadEvent = new TextEncoder().encode("event: reload\ndata: {}\n\n");
-
-export const formatPreviewReloadLog = (
-  filePath: string,
-  timestamp: Date,
-): string =>
-  formatLogMessage(
-    `Reloading preview after Markdown change: ${filePath}`,
-    timestamp,
-  );
-
-export const logPreviewReload = (filePath: string): void => {
-  console.log(formatPreviewReloadLog(filePath, new Date()));
 };
 
 export const formatPreviewClosedLog = (
@@ -50,76 +35,39 @@ export const logPreviewClosed = (filePath: string): void => {
   logInfo(`Stopping preview server after browser tab closed: ${filePath}`);
 };
 
-export const createHotReloadEventStream = (
-  filePath: string,
-  signal: AbortSignal,
-  options: PreviewHandlerOptions = {},
-): ReadableStream<Uint8Array> => {
-  let watcher: Deno.FsWatcher | undefined;
-  let close: (() => void) | undefined;
-  let closed = false;
+const escapeHtml = (value: string): string =>
+  value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 
-  const closeOnce = (controller?: ReadableStreamDefaultController) => {
-    if (closed) return;
-    closed = true;
-    watcher?.close();
-    options.onEventStreamClose?.();
-    if (!controller) return;
-    try {
-      controller.close();
-    } catch {
-      // The stream may already be closed if the client disconnected.
-    }
-  };
-
-  return new ReadableStream({
-    start(controller) {
-      options.onEventStreamOpen?.();
-      watcher = Deno.watchFs(dirname(filePath));
-
-      close = () => closeOnce(controller);
-      signal.addEventListener("abort", close, { once: true });
-
-      (async () => {
-        try {
-          for await (const event of watcher) {
-            if (
-              event.kind === "access" ||
-              !event.paths.some((path) => resolve(path) === filePath)
-            ) {
-              continue;
-            }
-
-            logPreviewReload(filePath);
-            controller.enqueue(reloadEvent);
-          }
-        } catch (error) {
-          if (!signal.aborted) {
-            controller.error(error);
-          }
-        } finally {
-          if (close) {
-            signal.removeEventListener("abort", close);
-          }
-        }
-      })();
-    },
-    cancel() {
-      closeOnce();
-    },
-  });
-};
+const renderSpaShell = (title: string): string =>
+  `<!doctype html>
+<html lang="und">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>${escapeHtml(title)}</title>
+  </head>
+  <body>
+    <div id="mdview-client-root"></div>
+    <script type="module" src="/assets/client.js"></script>
+  </body>
+</html>`;
 
 export const createPreviewHandler = (
   filePath: string,
   options: PreviewHandlerOptions = {},
 ): Deno.ServeHandler =>
 async (request) => {
+  const resolvedFilePath = resolve(filePath);
   try {
     const requestUrl = new URL(request.url);
     if (requestUrl.pathname === "/__mdview/events") {
       return new Response(
-        createHotReloadEventStream(filePath, request.signal, options),
+        createHotReloadEventStream(resolvedFilePath, request.signal, options),
         {
           headers: {
             "content-type": "text/event-stream; charset=utf-8",
@@ -130,8 +78,19 @@ async (request) => {
       );
     }
 
+    if (requestUrl.pathname === "/__mdview/document") {
+      const markdown = await Deno.readTextFile(resolvedFilePath);
+      return Response.json({
+        title: basename(resolvedFilePath),
+        fileUrl: toFileUrl(resolvedFilePath).href,
+        markdown,
+      }, {
+        headers: { "cache-control": "no-store" },
+      });
+    }
+
     if (requestUrl.pathname.startsWith("/assets/")) {
-      const asset = await readMermaidAsset(requestUrl.pathname);
+      const asset = await readPreviewAsset(requestUrl.pathname);
       if (!asset) {
         return new Response("Asset not found.", {
           status: 404,
@@ -146,20 +105,14 @@ async (request) => {
       return new Response(body, {
         headers: {
           "content-type": "text/javascript; charset=utf-8",
-          "cache-control": "public, max-age=31536000, immutable",
+          "cache-control": requestUrl.pathname === "/assets/client.js"
+            ? "no-store"
+            : "public, max-age=31536000, immutable",
         },
       });
     }
 
-    const markdown = await Deno.readTextFile(filePath);
-    const title = escapeHtml(basename(filePath));
-    const html = renderPreviewPage({
-      title,
-      fileUrl: toFileUrl(filePath).href,
-      body: renderMarkdown(markdown),
-    });
-
-    return new Response(html, {
+    return new Response(renderSpaShell(basename(resolvedFilePath)), {
       headers: { "content-type": "text/html; charset=utf-8" },
     });
   } catch (error) {

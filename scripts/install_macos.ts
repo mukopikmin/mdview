@@ -27,7 +27,6 @@ const buildDir = await Deno.makeTempDir({ prefix: "mdview-" });
 const buildPath = `${buildDir}/mdview`;
 
 try {
-  await run(["task", "vendor:mermaid"]);
   await run([
     "run",
     "--allow-read",
