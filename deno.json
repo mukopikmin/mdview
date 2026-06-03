@@ -1,8 +1,8 @@
 {
   "nodeModulesDir": "none",
   "tasks": {
-    "start": "npm run build:client && DENO_NO_PACKAGE_JSON=1 deno run --allow-read --allow-net --allow-run src/main.ts",
-    "test": "npm run build:client && DENO_NO_PACKAGE_JSON=1 deno test --allow-read test",
+    "start": "npm run build:client && DENO_NO_PACKAGE_JSON=1 deno run --allow-read --allow-write --allow-net --allow-run src/main.ts",
+    "test": "npm run build:client && DENO_NO_PACKAGE_JSON=1 deno test --allow-read --allow-write test",
     "compile": "npm run build:client && DENO_NO_PACKAGE_JSON=1 deno run --allow-read --allow-write --allow-run=deno scripts/compile.ts",
     "install:mac": "npm run build:client && DENO_NO_PACKAGE_JSON=1 deno run --allow-read --allow-write --allow-run=deno --allow-env=HOME scripts/install_macos.ts"
   },

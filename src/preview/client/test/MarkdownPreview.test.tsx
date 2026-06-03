@@ -5,7 +5,15 @@ import { MarkdownPreview } from "../MarkdownPreview";
 afterEach(() => cleanup());
 
 const renderMarkdown = (markdown: string) => {
-  const result = render(<MarkdownPreview markdown={markdown} />);
+  const result = render(
+    <MarkdownPreview
+      comments={[]}
+      markdown={markdown}
+      onCreateComment={async () => {}}
+      onDeleteComment={async () => {}}
+      onUpdateComment={async () => {}}
+    />,
+  );
   return { ...result, container: result.container };
 };
 
@@ -157,5 +165,20 @@ graph TD
     expect(container.querySelector("code.hljs.language-md")).not.toBeNull();
     expect(container.textContent).toContain("```mermaid");
     expect(container.textContent).toContain("A --> B");
+  });
+
+  it("adds source line controls to rendered Markdown blocks", () => {
+    const { container } = renderMarkdown(`# Title
+
+Body
+`);
+
+    expect(container.querySelector('[data-source-line="1"] h1')?.textContent)
+      .toBe("Title");
+    expect(
+      screen.getByRole("button", { name: "Add comment on line 1" }),
+    ).not.toBeNull();
+    expect(container.querySelector('[data-source-line="3"] p')?.textContent)
+      .toBe("Body");
   });
 });

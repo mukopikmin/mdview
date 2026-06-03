@@ -3,6 +3,7 @@ dist/
 dist-test/
 mdview
 src/preview/static/
+*.mdview-comments.json
 
 npm-debug.log*
 .DS_Store

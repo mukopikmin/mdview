@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --allow-read --allow-net --allow-run
+#!/usr/bin/env -S deno run --allow-read --allow-write --allow-net --allow-run
 import { CliUsageError, parseArgs, usage, version } from "./cli/args.ts";
 import { openBrowser } from "./cli/browser.ts";
 import { logInfo } from "./log.ts";
