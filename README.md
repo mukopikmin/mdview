@@ -1,54 +1,102 @@
 # mdview
 
-`mdview` is a small CLI for previewing a single Markdown file in your browser.
+`mdview` is a small CLI for previewing one Markdown file in your browser.
 
-Run it with a Markdown file path, and it starts a local HTTP server that renders
-the file as HTML, then opens the preview in your default browser.
+Pass it a Markdown file path. It starts a local HTTP server, renders the file as
+HTML, prints the preview URL, and opens that URL in your default browser.
 
 ## Usage
 
-After compiling or installing the CLI:
+```sh
+mdview <file.md> [options]
+```
+
+Preview a file:
 
 ```sh
 mdview README.md
 ```
 
-The printed local URL is also available if you want to open it manually.
+Use a different port:
 
-During development, you can run the CLI with Deno:
+```sh
+mdview README.md --port 4000
+```
+
+Print the URL without opening a browser:
+
+```sh
+mdview README.md --no-open
+```
+
+Keep the server running after the preview tab is closed:
+
+```sh
+mdview README.md --keep-alive
+```
+
+By default, the server reads the Markdown file again on each request, so
+refreshing the page shows recent edits. The browser preview also reloads
+automatically when the Markdown file changes.
+
+By default, the server stops after the browser tab is closed. Use `--keep-alive`
+when you want to leave the server running.
+
+## Options
+
+| Option              | Description                                                | Default                |
+| ------------------- | ---------------------------------------------------------- | ---------------------- |
+| `-p, --port <port>` | Port to bind. Must be between `1` and `65535`.             | `3334`                 |
+| `--host <host>`     | Hostname or IP address to bind.                            | `127.0.0.1`            |
+| `--no-open`         | Do not open the preview URL in your browser automatically. | Opens browser          |
+| `--keep-alive`      | Keep the server running after the browser tab is closed.   | Stops after tab closes |
+| `-v, --version`     | Print the CLI version.                                     |                        |
+| `-h, --help`        | Print command help.                                        |                        |
+
+## Browser Opening
+
+`mdview` opens the preview with the platform default opener:
+
+- macOS: `open`
+- Windows: `cmd /c start`
+- Linux: `xdg-open`
+
+Set `BROWSER` to choose the opener command explicitly. If the command contains
+`%s`, `mdview` replaces it with the preview URL. Otherwise, the URL is appended
+as the last argument.
+
+```sh
+BROWSER=explorer.exe mdview README.md
+BROWSER='chrome.exe --new-window %s' mdview README.md
+```
+
+## Development
+
+Install dependencies:
+
+```sh
+npm install
+```
+
+Run the CLI with Deno:
 
 ```sh
 deno task start README.md
 ```
 
-Or compile a standalone binary:
+Compile a standalone binary:
 
 ```sh
-npm install
 deno task compile
 ./mdview README.md
 ```
 
-On macOS, you can build in a temporary directory and install the binary to
+On macOS, build in a temporary directory and install the binary to
 `$HOME/.local/bin/mdview`:
 
 ```sh
-npm install
 deno task install:mac
 ```
-
-Options:
-
-```sh
-mdview README.md --port 4000 --host 127.0.0.1
-mdview README.md --no-open
-mdview README.md --keep-alive
-```
-
-The server reads the Markdown file on each request, so refreshing the page shows
-recent edits. The browser preview also reloads automatically when the Markdown
-file changes. By default, the server stops after the browser tab is closed; use
-`--keep-alive` to keep it running.
 
 ## Supported Markdown
 
