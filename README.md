@@ -13,7 +13,13 @@ After compiling or installing the CLI:
 mdview README.md
 ```
 
-The printed local URL is also available if you want to open it manually.
+The printed local URL is also available if you want to open it manually. Set
+`BROWSER` to choose the opener command explicitly:
+
+```sh
+BROWSER=explorer.exe mdview README.md
+BROWSER='chrome.exe --new-window %s' mdview README.md
+```
 
 During development, you can run the CLI with Deno:
 
