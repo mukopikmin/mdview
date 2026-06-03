@@ -15,6 +15,7 @@ Deno.test("uses the default host and port", () => {
   assertEquals(parseArgs(["README.md"]), {
     file: "README.md",
     host: "127.0.0.1",
+    keepAlive: false,
     open: true,
     port: 3334,
   });
@@ -26,6 +27,7 @@ Deno.test("parses host and port options", () => {
     {
       file: "README.md",
       host: "0.0.0.0",
+      keepAlive: false,
       open: true,
       port: 4000,
     },
@@ -36,7 +38,18 @@ Deno.test("parses no-open option", () => {
   assertEquals(parseArgs(["README.md", "--no-open"]), {
     file: "README.md",
     host: "127.0.0.1",
+    keepAlive: false,
     open: false,
+    port: 3334,
+  });
+});
+
+Deno.test("parses keep-alive option", () => {
+  assertEquals(parseArgs(["README.md", "--keep-alive"]), {
+    file: "README.md",
+    host: "127.0.0.1",
+    keepAlive: true,
+    open: true,
     port: 3334,
   });
 });
@@ -44,6 +57,7 @@ Deno.test("parses no-open option", () => {
 Deno.test("parses help", () => {
   assertEquals(parseArgs(["--help"]).help, true);
   assertMatch(usage, /Defaults to 3334/);
+  assertMatch(usage, /--keep-alive/);
 });
 
 Deno.test("parses version", () => {

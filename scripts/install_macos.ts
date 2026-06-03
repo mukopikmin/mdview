@@ -28,7 +28,6 @@ const buildPath = `${buildDir}/mdview`;
 const compileArgs = Deno.args.length ? Deno.args : [];
 
 try {
-  await run(["task", "vendor:mermaid"]);
   await run([
     "run",
     "--allow-read",

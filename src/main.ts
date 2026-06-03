@@ -1,7 +1,8 @@
 #!/usr/bin/env -S deno run --allow-read --allow-net --allow-run
 import { CliUsageError, parseArgs, usage, version } from "./cli/args.ts";
 import { openBrowser } from "./cli/browser.ts";
-import { startPreviewServer } from "./preview/server.ts";
+import { logInfo } from "./log.ts";
+import { startPreviewServer } from "./server/preview.ts";
 
 const main = async (): Promise<void> => {
   const options = parseArgs(Deno.args);
@@ -23,11 +24,12 @@ const main = async (): Promise<void> => {
   const preview = await startPreviewServer({
     file: options.file,
     host: options.host,
+    keepAlive: options.keepAlive,
     port: options.port,
   });
 
-  console.log(`Serving ${preview.filePath}`);
-  console.log(`Preview: ${preview.url}`);
+  logInfo(`Serving ${preview.filePath}`);
+  logInfo(`Preview: ${preview.url}`);
 
   if (options.open) {
     await openBrowser(preview.url);

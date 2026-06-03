@@ -63,8 +63,8 @@ const findLicenseText = async (
 const packageNameFromLockPath = (path: string): string =>
   path.replace(/^node_modules\//, "");
 
-const packageDirFromLockPath = (path: string): string =>
-  `node_modules/${packageNameFromLockPath(path)}`;
+const packageDirFromLockPath = (nodeModulesDir: string, path: string): string =>
+  `${nodeModulesDir}/${packageNameFromLockPath(path)}`;
 
 const readPackageJson = async (
   packageDir: string,
@@ -95,8 +95,11 @@ const repositoryUrl = (
 const noticeKey = (notice: Notice): string =>
   `${notice.name}@${notice.version}:${notice.source}`;
 
-const collectNpmNotices = async (): Promise<Notice[]> => {
-  const lock: PackageLock = JSON.parse(await readText("package-lock.json"));
+const collectNpmNotices = async (
+  lockPath = "src/preview/client/package-lock.json",
+  nodeModulesDir = "src/preview/client/node_modules",
+): Promise<Notice[]> => {
+  const lock: PackageLock = JSON.parse(await readText(lockPath));
   const packages = lock.packages ?? {};
   const notices: Notice[] = [];
 
@@ -104,14 +107,14 @@ const collectNpmNotices = async (): Promise<Notice[]> => {
     if (!path.startsWith("node_modules/")) continue;
     if (!metadata.version || !metadata.license) continue;
 
-    const packageDir = packageDirFromLockPath(path);
+    const packageDir = packageDirFromLockPath(nodeModulesDir, path);
     const packageJson = await readPackageJson(packageDir);
     notices.push({
       name: packageNameFromLockPath(path),
       version: metadata.version,
       license: metadata.license,
       source: repositoryUrl(packageJson) || metadata.resolved ||
-        "package-lock.json",
+        lockPath,
       licenseText: await findLicenseText(packageDir),
     });
   }

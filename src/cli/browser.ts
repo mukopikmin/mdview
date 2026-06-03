@@ -1,3 +1,5 @@
+import { logError } from "../log.ts";
+
 type OpenBrowserCommand = {
   command: string;
   args: string[];
@@ -22,7 +24,7 @@ export const buildOpenBrowserCommand = (
 export const openBrowser = async (url: string): Promise<void> => {
   const command = buildOpenBrowserCommand(url);
   if (!command) {
-    console.error(
+    logError(
       `Automatic browser opening is not supported on ${Deno.build.os}.`,
     );
     return;
@@ -36,12 +38,12 @@ export const openBrowser = async (url: string): Promise<void> => {
     }).output();
 
     if (!result.success) {
-      console.error(
+      logError(
         `Failed to open browser automatically: ${command.command} exited with ${result.code}.`,
       );
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error(`Failed to open browser automatically: ${message}`);
+    logError(`Failed to open browser automatically: ${message}`);
   }
 };

@@ -3,7 +3,7 @@ dist/
 dist-test/
 mdview
 THIRD_PARTY_NOTICES.md
-src/vendor/mermaid/
+src/preview/static/
 
 npm-debug.log*
 .DS_Store

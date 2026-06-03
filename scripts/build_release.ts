@@ -231,7 +231,15 @@ const verifyNativeBinary = async (binaryPath: string): Promise<void> => {
   );
 
   const child = new Deno.Command(binaryPath, {
-    args: [fixture, "--host", "127.0.0.1", "--port", String(verificationPort)],
+    args: [
+      fixture,
+      "--host",
+      "127.0.0.1",
+      "--port",
+      String(verificationPort),
+      "--no-open",
+      "--keep-alive",
+    ],
     stdout: "piped",
     stderr: "piped",
   }).spawn();
@@ -239,8 +247,14 @@ const verifyNativeBinary = async (binaryPath: string): Promise<void> => {
   try {
     const url = await readLineUntilPreview(child);
     const html = await (await fetch(url)).text();
-    if (!html.includes("/assets/mermaid.esm.min.mjs")) {
-      throw new Error("Preview page did not include the Mermaid asset import.");
+    if (!html.includes("/assets/client.js")) {
+      throw new Error("Preview page did not include the preview client.");
+    }
+
+    const document = await (await fetch(new URL("/__mdview/document", url)))
+      .json() as { markdown?: string };
+    if (!document.markdown?.includes("```mermaid")) {
+      throw new Error("Preview document API did not return the Mermaid block.");
     }
 
     const asset = await fetch(new URL("/assets/mermaid.esm.min.mjs", url));
@@ -269,7 +283,6 @@ const releaseTargets = targets.filter((target) =>
 
 await Deno.mkdir("dist", { recursive: true });
 await ensureArchiveCommands(releaseTargets);
-await run(Deno.execPath(), ["task", "vendor:mermaid"]);
 await run(Deno.execPath(), ["task", "notices"]);
 
 const checksums: string[] = [];
