@@ -1,4 +1,10 @@
-import { createElement, useMemo, useState } from "react";
+import {
+  createContext,
+  createElement,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 import type React from "react";
 import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
@@ -18,6 +24,8 @@ export type MarkdownPreviewProps = {
 
 const trimFinalNewline = (value: string): string => value.replace(/\n$/, "");
 
+const SourceLineContext = createContext<ReadonlySet<number>>(new Set());
+
 type SourcePosition = {
   start?: {
     line?: number;
@@ -30,6 +38,7 @@ type SourceNode = {
 
 type CommentableBlockProps = {
   children: React.ReactNode;
+  className?: string;
   comments: PreviewComment[];
   line: number;
   onCreateComment: (line: number, body: string) => Promise<void>;
@@ -43,6 +52,7 @@ const getSourceLine = (props: { node?: SourceNode }): number | undefined => {
 
 const CommentableBlock = ({
   children,
+  className,
   comments,
   line,
   onCreateComment,
@@ -55,6 +65,10 @@ const CommentableBlock = ({
   const [isAdding, setIsAdding] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string>();
+  const ancestorSourceLines = useContext(SourceLineContext);
+  const sourceLines = useMemo(() => {
+    return new Set([...ancestorSourceLines, line]);
+  }, [ancestorSourceLines, line]);
 
   const handleCreate = async () => {
     const body = draft.trim();
@@ -101,7 +115,10 @@ const CommentableBlock = ({
   };
 
   return (
-    <div className="commentable-block" data-source-line={line}>
+    <div
+      className={["commentable-block", className].filter(Boolean).join(" ")}
+      data-source-line={line}
+    >
       <div className="commentable-content">
         <button
           aria-label={`Add comment on line ${line}`}
@@ -111,7 +128,9 @@ const CommentableBlock = ({
           type="button"
         >
         </button>
-        {children}
+        <SourceLineContext.Provider value={sourceLines}>
+          {children}
+        </SourceLineContext.Provider>
       </div>
       {(isAdding || comments.length > 0 || error) && (
         <div className="comment-thread">
@@ -219,9 +238,11 @@ const createCommentableComponent = (
   >,
 ) => {
   return ({ children, node, ...elementProps }: ComponentProps) => {
+    const ancestorSourceLines = useContext(SourceLineContext);
     const line = getSourceLine({ node });
     const element = createElement(tagName, elementProps, children);
     if (line === undefined) return element;
+    if (ancestorSourceLines.has(line)) return element;
 
     return (
       <CommentableBlock
@@ -245,12 +266,17 @@ const createCommentableListItem = (
   >,
 ) => {
   return ({ children, node, ...elementProps }: ComponentProps) => {
+    const ancestorSourceLines = useContext(SourceLineContext);
     const line = getSourceLine({ node });
     if (line === undefined) return <li {...elementProps}>{children}</li>;
+    if (ancestorSourceLines.has(line)) {
+      return <li {...elementProps}>{children}</li>;
+    }
 
     return (
       <li {...elementProps}>
         <CommentableBlock
+          className="commentable-list-item"
           comments={commentsByLine.get(line) ?? []}
           line={line}
           onCreateComment={props.onCreateComment}

@@ -111,6 +111,8 @@ console.log("<ok>");
       "ordered child",
     );
     expect(container.querySelectorAll("ul > li")).toHaveLength(3);
+    expect(container.querySelector("li > .commentable-list-item")).not
+      .toBeNull();
   });
 
   it("renders task list checkboxes", () => {
@@ -194,6 +196,27 @@ Body
     );
     expect(
       screen.getAllByRole("button", { name: "Add comment on line 1" }),
+    ).toHaveLength(1);
+  });
+
+  it("does not add duplicate source line controls for loose list paragraphs", () => {
+    const { container } = renderMarkdown(`- Parent item
+
+  More detail
+`);
+
+    expect(container.querySelector("li p")?.textContent).toBe("Parent item");
+    expect(container.querySelectorAll('[data-source-line="1"]')).toHaveLength(
+      1,
+    );
+    expect(
+      screen.getAllByRole("button", { name: "Add comment on line 1" }),
+    ).toHaveLength(1);
+    expect(container.querySelectorAll('[data-source-line="3"]')).toHaveLength(
+      1,
+    );
+    expect(
+      screen.getAllByRole("button", { name: "Add comment on line 3" }),
     ).toHaveLength(1);
   });
 });

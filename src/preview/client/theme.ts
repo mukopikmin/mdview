@@ -334,6 +334,22 @@ export const previewThemeCss = `
         position: relative;
       }
 
+      .commentable-list-item {
+        margin-left: 0;
+        padding-left: 0;
+      }
+
+      .commentable-list-item > .commentable-content {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 24px;
+        column-gap: 8px;
+        align-items: start;
+      }
+
+      .commentable-list-item > .commentable-content > :not(.comment-line-button) {
+        grid-column: 1;
+      }
+
       .comment-line-button {
         position: absolute;
         top: 0.1rem;
@@ -367,6 +383,13 @@ export const previewThemeCss = `
 
       .comment-line-button::before {
         content: "+";
+      }
+
+      .commentable-list-item > .commentable-content > .comment-line-button {
+        position: static;
+        grid-column: 2;
+        grid-row: 1;
+        margin-top: 0.1rem;
       }
 
       .comment-thread {
