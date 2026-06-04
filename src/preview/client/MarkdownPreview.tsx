@@ -1,4 +1,12 @@
-import { createElement, useMemo, useState } from "react";
+import {
+  Children,
+  createContext,
+  createElement,
+  isValidElement,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 import type React from "react";
 import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
@@ -18,6 +26,8 @@ export type MarkdownPreviewProps = {
 
 const trimFinalNewline = (value: string): string => value.replace(/\n$/, "");
 
+const SourceLineContext = createContext<ReadonlySet<number>>(new Set());
+
 type SourcePosition = {
   start?: {
     line?: number;
@@ -30,6 +40,7 @@ type SourceNode = {
 
 type CommentableBlockProps = {
   children: React.ReactNode;
+  className?: string;
   comments: PreviewComment[];
   line: number;
   onCreateComment: (line: number, body: string) => Promise<void>;
@@ -43,6 +54,7 @@ const getSourceLine = (props: { node?: SourceNode }): number | undefined => {
 
 const CommentableBlock = ({
   children,
+  className,
   comments,
   line,
   onCreateComment,
@@ -55,6 +67,10 @@ const CommentableBlock = ({
   const [isAdding, setIsAdding] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string>();
+  const ancestorSourceLines = useContext(SourceLineContext);
+  const sourceLines = useMemo(() => {
+    return new Set([...ancestorSourceLines, line]);
+  }, [ancestorSourceLines, line]);
 
   const handleCreate = async () => {
     const body = draft.trim();
@@ -101,7 +117,10 @@ const CommentableBlock = ({
   };
 
   return (
-    <div className="commentable-block" data-source-line={line}>
+    <div
+      className={["commentable-block", className].filter(Boolean).join(" ")}
+      data-source-line={line}
+    >
       <div className="commentable-content">
         <button
           aria-label={`Add comment on line ${line}`}
@@ -111,7 +130,9 @@ const CommentableBlock = ({
           type="button"
         >
         </button>
-        {children}
+        <SourceLineContext.Provider value={sourceLines}>
+          {children}
+        </SourceLineContext.Provider>
       </div>
       {(isAdding || comments.length > 0 || error) && (
         <div className="comment-thread">
@@ -210,6 +231,24 @@ type ComponentProps = {
   node?: SourceNode;
 };
 
+type CodeElementProps = {
+  children?: React.ReactNode;
+  className?: string;
+};
+
+const getMermaidCodeText = (
+  children: React.ReactNode,
+): string | undefined => {
+  const childElements = Children.toArray(children);
+  if (childElements.length !== 1) return undefined;
+  const child = childElements[0];
+  if (!isValidElement<CodeElementProps>(child)) return undefined;
+  const className = child.props.className;
+  if (!className?.match(/\blanguage-mermaid\b/)) return undefined;
+
+  return trimFinalNewline(String(child.props.children));
+};
+
 const createCommentableComponent = (
   tagName: keyof React.JSX.IntrinsicElements,
   commentsByLine: Map<number, PreviewComment[]>,
@@ -219,9 +258,11 @@ const createCommentableComponent = (
   >,
 ) => {
   return ({ children, node, ...elementProps }: ComponentProps) => {
+    const ancestorSourceLines = useContext(SourceLineContext);
     const line = getSourceLine({ node });
     const element = createElement(tagName, elementProps, children);
     if (line === undefined) return element;
+    if (ancestorSourceLines.has(line)) return element;
 
     return (
       <CommentableBlock
@@ -245,12 +286,17 @@ const createCommentableListItem = (
   >,
 ) => {
   return ({ children, node, ...elementProps }: ComponentProps) => {
+    const ancestorSourceLines = useContext(SourceLineContext);
     const line = getSourceLine({ node });
     if (line === undefined) return <li {...elementProps}>{children}</li>;
+    if (ancestorSourceLines.has(line)) {
+      return <li {...elementProps}>{children}</li>;
+    }
 
     return (
       <li {...elementProps}>
         <CommentableBlock
+          className="commentable-list-item"
           comments={commentsByLine.get(line) ?? []}
           line={line}
           onCreateComment={props.onCreateComment}
@@ -260,6 +306,37 @@ const createCommentableListItem = (
           {children}
         </CommentableBlock>
       </li>
+    );
+  };
+};
+
+const createCommentablePre = (
+  commentsByLine: Map<number, PreviewComment[]>,
+  props: Pick<
+    MarkdownPreviewProps,
+    "onCreateComment" | "onDeleteComment" | "onUpdateComment"
+  >,
+) => {
+  return ({ children, node, ...elementProps }: ComponentProps) => {
+    const ancestorSourceLines = useContext(SourceLineContext);
+    const line = getSourceLine({ node });
+    const mermaidCode = getMermaidCodeText(children);
+    const element = mermaidCode === undefined
+      ? <pre {...elementProps}>{children}</pre>
+      : <pre className="mermaid">{mermaidCode}</pre>;
+    if (line === undefined) return element;
+    if (ancestorSourceLines.has(line)) return element;
+
+    return (
+      <CommentableBlock
+        comments={commentsByLine.get(line) ?? []}
+        line={line}
+        onCreateComment={props.onCreateComment}
+        onDeleteComment={props.onDeleteComment}
+        onUpdateComment={props.onUpdateComment}
+      >
+        {element}
+      </CommentableBlock>
     );
   };
 };
@@ -289,11 +366,6 @@ export const MarkdownPreview = ({
       onUpdateComment,
     };
     return {
-      blockquote: createCommentableComponent(
-        "blockquote",
-        commentsByLine,
-        commentCallbacks,
-      ),
       h1: createCommentableComponent("h1", commentsByLine, commentCallbacks),
       h2: createCommentableComponent("h2", commentsByLine, commentCallbacks),
       h3: createCommentableComponent("h3", commentsByLine, commentCallbacks),
@@ -302,34 +374,13 @@ export const MarkdownPreview = ({
       h6: createCommentableComponent("h6", commentsByLine, commentCallbacks),
       li: createCommentableListItem(commentsByLine, commentCallbacks),
       p: createCommentableComponent("p", commentsByLine, commentCallbacks),
+      pre: createCommentablePre(commentsByLine, commentCallbacks),
       table: createCommentableComponent(
         "table",
         commentsByLine,
         commentCallbacks,
       ),
-      code({ children, className, node, ...props }) {
-        const language = className?.match(/\blanguage-([^\s]+)/)?.[1];
-        if (language === "mermaid") {
-          const line = getSourceLine({ node });
-          const element = (
-            <pre className="mermaid">
-              {trimFinalNewline(String(children))}
-            </pre>
-          );
-          if (line === undefined) return element;
-          return (
-            <CommentableBlock
-              comments={commentsByLine.get(line) ?? []}
-              line={line}
-              onCreateComment={onCreateComment}
-              onDeleteComment={onDeleteComment}
-              onUpdateComment={onUpdateComment}
-            >
-              {element}
-            </CommentableBlock>
-          );
-        }
-
+      code({ children, className, ...props }) {
         return (
           <code className={className} {...props}>
             {children}

@@ -369,6 +369,10 @@ export const previewThemeCss = `
         content: "+";
       }
 
+      .commentable-list-item > .commentable-content > .comment-line-button {
+        left: calc(-34px - 2em);
+      }
+
       .comment-thread {
         margin: -4px 0 16px;
         border-left: 3px solid var(--color-accent);

@@ -111,6 +111,13 @@ console.log("<ok>");
       "ordered child",
     );
     expect(container.querySelectorAll("ul > li")).toHaveLength(3);
+    const listCommentTarget = container.querySelector(
+      "li > .commentable-list-item",
+    );
+    expect(listCommentTarget).not.toBeNull();
+    expect(listCommentTarget?.classList.contains("commentable-block")).toBe(
+      true,
+    );
   });
 
   it("renders task list checkboxes", () => {
@@ -139,6 +146,20 @@ fun main() {
 
     expect(container.querySelector("code.hljs.language-kotlin")).not.toBeNull();
     expect(container.querySelector(".hljs-keyword")?.textContent).toBe("fun");
+  });
+
+  it("adds source line controls to code fences", () => {
+    const { container } = renderMarkdown(`\`\`\`ts
+const value = 1;
+\`\`\`
+`);
+
+    expect(
+      container.querySelector('[data-source-line="1"] pre code.language-ts'),
+    ).not.toBeNull();
+    expect(
+      screen.getByRole("button", { name: "Add comment on line 1" }),
+    ).not.toBeNull();
   });
 
   it("renders mermaid code fences for browser-side diagrams", () => {
@@ -180,5 +201,41 @@ Body
     ).not.toBeNull();
     expect(container.querySelector('[data-source-line="3"] p')?.textContent)
       .toBe("Body");
+  });
+
+  it("does not add duplicate source line controls for blockquotes", () => {
+    const { container } = renderMarkdown(`> Quoted text
+`);
+
+    expect(container.querySelector("blockquote p")?.textContent).toBe(
+      "Quoted text",
+    );
+    expect(container.querySelectorAll('[data-source-line="1"]')).toHaveLength(
+      1,
+    );
+    expect(
+      screen.getAllByRole("button", { name: "Add comment on line 1" }),
+    ).toHaveLength(1);
+  });
+
+  it("does not add duplicate source line controls for loose list paragraphs", () => {
+    const { container } = renderMarkdown(`- Parent item
+
+  More detail
+`);
+
+    expect(container.querySelector("li p")?.textContent).toBe("Parent item");
+    expect(container.querySelectorAll('[data-source-line="1"]')).toHaveLength(
+      1,
+    );
+    expect(
+      screen.getAllByRole("button", { name: "Add comment on line 1" }),
+    ).toHaveLength(1);
+    expect(container.querySelectorAll('[data-source-line="3"]')).toHaveLength(
+      1,
+    );
+    expect(
+      screen.getAllByRole("button", { name: "Add comment on line 3" }),
+    ).toHaveLength(1);
   });
 });
