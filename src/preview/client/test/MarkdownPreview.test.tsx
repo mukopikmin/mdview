@@ -148,6 +148,20 @@ fun main() {
     expect(container.querySelector(".hljs-keyword")?.textContent).toBe("fun");
   });
 
+  it("adds source line controls to code fences", () => {
+    const { container } = renderMarkdown(`\`\`\`ts
+const value = 1;
+\`\`\`
+`);
+
+    expect(
+      container.querySelector('[data-source-line="1"] pre code.language-ts'),
+    ).not.toBeNull();
+    expect(
+      screen.getByRole("button", { name: "Add comment on line 1" }),
+    ).not.toBeNull();
+  });
+
   it("renders mermaid code fences for browser-side diagrams", () => {
     const { container } = renderMarkdown(`\`\`\`mermaid
 graph TD

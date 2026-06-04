@@ -1,6 +1,8 @@
 import {
+  Children,
   createContext,
   createElement,
+  isValidElement,
   useContext,
   useMemo,
   useState,
@@ -229,6 +231,24 @@ type ComponentProps = {
   node?: SourceNode;
 };
 
+type CodeElementProps = {
+  children?: React.ReactNode;
+  className?: string;
+};
+
+const getMermaidCodeText = (
+  children: React.ReactNode,
+): string | undefined => {
+  const childElements = Children.toArray(children);
+  if (childElements.length !== 1) return undefined;
+  const child = childElements[0];
+  if (!isValidElement<CodeElementProps>(child)) return undefined;
+  const className = child.props.className;
+  if (!className?.match(/\blanguage-mermaid\b/)) return undefined;
+
+  return trimFinalNewline(String(child.props.children));
+};
+
 const createCommentableComponent = (
   tagName: keyof React.JSX.IntrinsicElements,
   commentsByLine: Map<number, PreviewComment[]>,
@@ -290,6 +310,37 @@ const createCommentableListItem = (
   };
 };
 
+const createCommentablePre = (
+  commentsByLine: Map<number, PreviewComment[]>,
+  props: Pick<
+    MarkdownPreviewProps,
+    "onCreateComment" | "onDeleteComment" | "onUpdateComment"
+  >,
+) => {
+  return ({ children, node, ...elementProps }: ComponentProps) => {
+    const ancestorSourceLines = useContext(SourceLineContext);
+    const line = getSourceLine({ node });
+    const mermaidCode = getMermaidCodeText(children);
+    const element = mermaidCode === undefined
+      ? <pre {...elementProps}>{children}</pre>
+      : <pre className="mermaid">{mermaidCode}</pre>;
+    if (line === undefined) return element;
+    if (ancestorSourceLines.has(line)) return element;
+
+    return (
+      <CommentableBlock
+        comments={commentsByLine.get(line) ?? []}
+        line={line}
+        onCreateComment={props.onCreateComment}
+        onDeleteComment={props.onDeleteComment}
+        onUpdateComment={props.onUpdateComment}
+      >
+        {element}
+      </CommentableBlock>
+    );
+  };
+};
+
 export const MarkdownPreview = ({
   comments,
   markdown,
@@ -323,34 +374,13 @@ export const MarkdownPreview = ({
       h6: createCommentableComponent("h6", commentsByLine, commentCallbacks),
       li: createCommentableListItem(commentsByLine, commentCallbacks),
       p: createCommentableComponent("p", commentsByLine, commentCallbacks),
+      pre: createCommentablePre(commentsByLine, commentCallbacks),
       table: createCommentableComponent(
         "table",
         commentsByLine,
         commentCallbacks,
       ),
-      code({ children, className, node, ...props }) {
-        const language = className?.match(/\blanguage-([^\s]+)/)?.[1];
-        if (language === "mermaid") {
-          const line = getSourceLine({ node });
-          const element = (
-            <pre className="mermaid">
-              {trimFinalNewline(String(children))}
-            </pre>
-          );
-          if (line === undefined) return element;
-          return (
-            <CommentableBlock
-              comments={commentsByLine.get(line) ?? []}
-              line={line}
-              onCreateComment={onCreateComment}
-              onDeleteComment={onDeleteComment}
-              onUpdateComment={onUpdateComment}
-            >
-              {element}
-            </CommentableBlock>
-          );
-        }
-
+      code({ children, className, ...props }) {
         return (
           <code className={className} {...props}>
             {children}
