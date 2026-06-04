@@ -111,8 +111,13 @@ console.log("<ok>");
       "ordered child",
     );
     expect(container.querySelectorAll("ul > li")).toHaveLength(3);
-    expect(container.querySelector("li > .commentable-list-item")).not
-      .toBeNull();
+    const listCommentTarget = container.querySelector(
+      "li > .commentable-list-item",
+    );
+    expect(listCommentTarget).not.toBeNull();
+    expect(listCommentTarget?.classList.contains("commentable-block")).toBe(
+      true,
+    );
   });
 
   it("renders task list checkboxes", () => {
