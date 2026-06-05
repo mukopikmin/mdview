@@ -379,11 +379,36 @@ export const previewThemeCss = `
         padding: 8px 0 2px 12px;
       }
 
+      .comment-thread-stale {
+        border-left-color: #d29922;
+      }
+
       .comment-thread-heading {
+        display: flex;
+        align-items: center;
+        gap: 8px;
         margin-bottom: 6px;
         color: var(--color-text-muted);
         font-size: 0.78rem;
         font-weight: 600;
+      }
+
+      .comment-thread-heading span {
+        border: 1px solid #d29922;
+        border-radius: 999px;
+        padding: 1px 6px;
+        color: #9a6700;
+        font-size: 0.72rem;
+      }
+
+      .comment-stale-source {
+        margin-bottom: 6px;
+        color: var(--color-text-muted);
+        font-size: 0.78rem;
+      }
+
+      .comment-stale-source code {
+        color: var(--color-text-muted);
       }
 
       .comment-item,

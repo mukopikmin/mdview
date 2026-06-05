@@ -27,6 +27,10 @@ export type PreviewComment = {
   createdAt: string;
   id: string;
   line: number;
+  originalLine: number;
+  sourceHash?: string;
+  sourceText?: string;
+  stale: boolean;
   updatedAt: string;
 };
 
@@ -73,6 +77,22 @@ const renderSpaShell = (title: string): string =>
 const getCommentsFilePath = (markdownFilePath: string): string =>
   `${markdownFilePath}.mdview-comments.json`;
 
+const lineSearchRadius = 40;
+
+const getMarkdownLines = (markdown: string): string[] => markdown.split("\n");
+
+const getLineText = (markdown: string, line: number): string | undefined =>
+  getMarkdownLines(markdown)[line - 1];
+
+const hashSourceText = (value: string): string => {
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0");
+};
+
 const createEmptyCommentsDocument = (
   filePath: string,
 ): PreviewCommentsDocument => ({
@@ -107,6 +127,77 @@ const readCommentsDocument = async (
 
   return {
     comments: parsed.comments.filter(isPreviewComment),
+    filePath,
+  };
+};
+
+const resolveCommentPosition = (
+  comment: PreviewComment,
+  markdown: string,
+): PreviewComment => {
+  const sourceText = comment.sourceText ??
+    getLineText(markdown, comment.line) ??
+    "";
+  const sourceHash = comment.sourceHash ?? hashSourceText(sourceText);
+  const currentLineText = getLineText(markdown, comment.line);
+
+  if (
+    currentLineText !== undefined &&
+    currentLineText === sourceText &&
+    hashSourceText(currentLineText) === sourceHash
+  ) {
+    return {
+      ...comment,
+      originalLine: comment.line,
+      sourceHash,
+      sourceText,
+      stale: false,
+    };
+  }
+
+  const lines = getMarkdownLines(markdown);
+  const startLine = Math.max(1, comment.line - lineSearchRadius);
+  const endLine = Math.min(lines.length, comment.line + lineSearchRadius);
+  const matchingLines: number[] = [];
+
+  for (let line = startLine; line <= endLine; line += 1) {
+    const lineText = lines[line - 1];
+    if (lineText === sourceText && hashSourceText(lineText) === sourceHash) {
+      matchingLines.push(line);
+    }
+  }
+
+  if (matchingLines.length === 1) {
+    return {
+      ...comment,
+      line: matchingLines[0],
+      originalLine: comment.line,
+      sourceHash,
+      sourceText,
+      stale: false,
+    };
+  }
+
+  return {
+    ...comment,
+    originalLine: comment.line,
+    sourceHash,
+    sourceText,
+    stale: true,
+  };
+};
+
+const readResolvedCommentsDocument = async (
+  filePath: string,
+): Promise<PreviewCommentsDocument> => {
+  const [document, markdown] = await Promise.all([
+    readCommentsDocument(filePath),
+    Deno.readTextFile(filePath),
+  ]);
+  return {
+    comments: document.comments.map((comment) =>
+      resolveCommentPosition(comment, markdown)
+    ),
     filePath,
   };
 };
@@ -184,7 +275,7 @@ const handleCommentsRequest = async (
 ): Promise<Response> => {
   const commentsPath = "/__mdview/comments";
   if (pathname === commentsPath && request.method === "GET") {
-    return Response.json(await readCommentsDocument(filePath), {
+    return Response.json(await readResolvedCommentsDocument(filePath), {
       headers: { "cache-control": "no-store" },
     });
   }
@@ -193,12 +284,24 @@ const handleCommentsRequest = async (
     const body = await parseJsonBody(request);
     const line = parseCommentLine(body);
     const commentBody = parseCommentBody(body);
+    const markdown = await Deno.readTextFile(filePath);
+    const sourceText = getLineText(markdown, line);
+    if (sourceText === undefined) {
+      throw new Response("Comment line does not exist.", {
+        status: 400,
+        headers: { "content-type": "text/plain; charset=utf-8" },
+      });
+    }
     const now = new Date().toISOString();
     const comment: PreviewComment = {
       body: commentBody,
       createdAt: now,
       id: crypto.randomUUID(),
       line,
+      originalLine: line,
+      sourceHash: hashSourceText(sourceText),
+      sourceText,
+      stale: false,
       updatedAt: now,
     };
     const document = await readCommentsDocument(filePath);
@@ -231,7 +334,9 @@ const handleCommentsRequest = async (
     const comments = [...document.comments];
     comments[index] = updatedComment;
     await writeCommentsDocument(filePath, { comments, filePath });
-    return createCommentResponse(updatedComment);
+    return createCommentResponse(
+      resolveCommentPosition(updatedComment, await Deno.readTextFile(filePath)),
+    );
   }
 
   if (request.method === "DELETE") {
