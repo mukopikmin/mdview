@@ -3,10 +3,6 @@ export type PreviewComment = {
   createdAt: string;
   id: string;
   line: number;
-  originalLine: number;
-  sourceHash?: string;
-  sourceText?: string;
-  stale: boolean;
   updatedAt: string;
 };
 
