@@ -63,8 +63,13 @@ const CommentListItem = ({
         <span>{formatLineLabel(comment)}</span>
         {comment.stale && <span className="comment-state">Stale</span>}
       </div>
-      {comment.stale && (
-        <pre className="comment-source">{comment.sourceText ?? ""}</pre>
+      {comment.sourceText && (
+        <div className="comment-source-block">
+          <div className="comment-source-label">
+            {comment.stale ? "Original line" : "Target line"}
+          </div>
+          <pre className="comment-source">{comment.sourceText}</pre>
+        </div>
       )}
       {isEditing
         ? (

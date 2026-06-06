@@ -51,6 +51,9 @@ describe("CommentList", () => {
     expect(screen.getByText("Active comment.")).not.toBeNull();
     expect(screen.getByText("Stale comment.")).not.toBeNull();
     expect(screen.getByText("Stale")).not.toBeNull();
+    expect(screen.getByText("Target line")).not.toBeNull();
+    expect(screen.getByText("Body")).not.toBeNull();
+    expect(screen.getByText("Original line")).not.toBeNull();
     expect(screen.getByText("Old body")).not.toBeNull();
   });
 

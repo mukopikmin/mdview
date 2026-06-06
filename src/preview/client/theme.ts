@@ -486,6 +486,17 @@ export const previewThemeCss = `
         font-size: 0.72rem;
       }
 
+      .comment-source-block {
+        margin-bottom: 8px;
+      }
+
+      .comment-source-label {
+        margin-bottom: 4px;
+        color: var(--color-text-muted);
+        font-size: 0.78rem;
+        font-weight: 600;
+      }
+
       .comment-source {
         margin-bottom: 8px;
         padding: 8px 10px;
