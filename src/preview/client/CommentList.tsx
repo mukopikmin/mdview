@@ -1,16 +1,8 @@
-import { useState } from "react";
+import { CommentItem } from "./CommentItem";
 import type { PreviewComment } from "./comments";
 
 export type CommentListProps = {
   comments: PreviewComment[];
-  onDeleteComment: (id: string) => Promise<void>;
-  onReopenComment: (id: string) => Promise<void>;
-  onResolveComment: (id: string) => Promise<void>;
-  onUpdateComment: (id: string, body: string) => Promise<void>;
-};
-
-type CommentListItemProps = {
-  comment: PreviewComment;
   onDeleteComment: (id: string) => Promise<void>;
   onReopenComment: (id: string) => Promise<void>;
   onResolveComment: (id: string) => Promise<void>;
@@ -23,159 +15,6 @@ const formatLineLabel = (comment: PreviewComment): string => {
     return `Line ${comment.line} (originally ${comment.originalLine})`;
   }
   return `Line ${comment.line}`;
-};
-
-const CommentListItem = ({
-  comment,
-  onDeleteComment,
-  onReopenComment,
-  onResolveComment,
-  onUpdateComment,
-}: CommentListItemProps) => {
-  const [draft, setDraft] = useState(comment.body);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string>();
-
-  const handleUpdate = async () => {
-    const body = draft.trim();
-    if (!body) return;
-    setIsSaving(true);
-    setError(undefined);
-    try {
-      await onUpdateComment(comment.id, body);
-      setIsEditing(false);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : String(error));
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    setIsSaving(true);
-    setError(undefined);
-    try {
-      await onDeleteComment(comment.id);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : String(error));
-      setIsSaving(false);
-    }
-  };
-
-  const handleResolve = async () => {
-    setIsSaving(true);
-    setError(undefined);
-    try {
-      await onResolveComment(comment.id);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : String(error));
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleReopen = async () => {
-    setIsSaving(true);
-    setError(undefined);
-    try {
-      await onReopenComment(comment.id);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : String(error));
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  return (
-    <article className="comment-list-item">
-      <div className="comment-list-meta">
-        <span>{formatLineLabel(comment)}</span>
-        {comment.resolved && <span className="comment-state">Resolved</span>}
-        {!comment.resolved && comment.stale && (
-          <span className="comment-state">Stale</span>
-        )}
-      </div>
-      {comment.sourceText && (
-        <div className="comment-source-block">
-          <div className="comment-source-label">
-            {comment.stale ? "Original line" : "Target line"}
-          </div>
-          <pre className="comment-source">{comment.sourceText}</pre>
-        </div>
-      )}
-      {isEditing
-        ? (
-          <>
-            <textarea
-              className="comment-input"
-              onChange={(event) => setDraft(event.target.value)}
-              value={draft}
-            />
-            <div className="comment-actions">
-              <button
-                disabled={isSaving || draft.trim() === ""}
-                onClick={handleUpdate}
-                type="button"
-              >
-                Save
-              </button>
-              <button
-                disabled={isSaving}
-                onClick={() => {
-                  setDraft(comment.body);
-                  setIsEditing(false);
-                }}
-                type="button"
-              >
-                Cancel
-              </button>
-            </div>
-          </>
-        )
-        : (
-          <>
-            <div className="comment-body">{comment.body}</div>
-            <div className="comment-actions">
-              {comment.resolved
-                ? (
-                  <button
-                    disabled={isSaving}
-                    onClick={handleReopen}
-                    type="button"
-                  >
-                    Reopen
-                  </button>
-                )
-                : (
-                  <button
-                    disabled={isSaving}
-                    onClick={handleResolve}
-                    type="button"
-                  >
-                    Resolve
-                  </button>
-                )}
-              <button
-                disabled={isSaving}
-                onClick={() => setIsEditing(true)}
-                type="button"
-              >
-                Edit
-              </button>
-              <button
-                disabled={isSaving}
-                onClick={handleDelete}
-                type="button"
-              >
-                Delete
-              </button>
-            </div>
-          </>
-        )}
-      {error && <div className="comment-error">{error}</div>}
-    </article>
-  );
 };
 
 type CommentSectionProps =
@@ -208,13 +47,17 @@ const CommentSection = ({
       : (
         <div className="comment-list-items">
           {comments.map((comment) => (
-            <CommentListItem
+            <CommentItem
+              className="comment-list-item"
               comment={comment}
               key={comment.id}
+              lineLabel={formatLineLabel(comment)}
               onDeleteComment={onDeleteComment}
               onReopenComment={onReopenComment}
               onResolveComment={onResolveComment}
               onUpdateComment={onUpdateComment}
+              showSource
+              showState
             />
           ))}
         </div>
