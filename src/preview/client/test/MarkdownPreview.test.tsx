@@ -1,17 +1,24 @@
-import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { PreviewComment } from "../comments";
 import { MarkdownPreview } from "../MarkdownPreview";
 
 afterEach(() => cleanup());
 
-const renderMarkdown = (markdown: string, comments: PreviewComment[] = []) => {
+const renderMarkdown = (
+  markdown: string,
+  comments: PreviewComment[] = [],
+  callbacks: Partial<{
+    onResolveComment: (id: string) => Promise<void>;
+  }> = {},
+) => {
   const result = render(
     <MarkdownPreview
       comments={comments}
       markdown={markdown}
       onCreateComment={async () => {}}
       onDeleteComment={async () => {}}
+      onResolveComment={callbacks.onResolveComment ?? (async () => {})}
       onUpdateComment={async () => {}}
     />,
   );
@@ -238,5 +245,27 @@ Body
     expect(
       screen.getAllByRole("button", { name: "Add comment on line 3" }),
     ).toHaveLength(1);
+  });
+
+  it("resolves inline comments from the preview", async () => {
+    const onResolveComment = vi.fn(async () => {});
+    renderMarkdown("# Title\n\nBody\n", [{
+      body: "Clarify this.",
+      createdAt: "2026-06-05T00:00:00.000Z",
+      id: "comment-1",
+      line: 3,
+      originalLine: 3,
+      resolved: false,
+      sourceHash: "example",
+      sourceText: "Body",
+      stale: false,
+      updatedAt: "2026-06-05T00:00:00.000Z",
+    }], { onResolveComment });
+
+    screen.getByRole("button", { name: "Resolve" }).click();
+
+    await waitFor(() =>
+      expect(onResolveComment).toHaveBeenCalledWith("comment-1")
+    );
   });
 });

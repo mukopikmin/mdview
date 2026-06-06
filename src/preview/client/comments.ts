@@ -4,6 +4,8 @@ export type PreviewComment = {
   id: string;
   line: number;
   originalLine: number;
+  resolved: boolean;
+  resolvedAt?: string;
   sourceHash?: string;
   sourceText?: string;
   stale: boolean;
@@ -49,6 +51,32 @@ export const updateComment = async (
   });
   if (!response.ok) {
     throw new Error(`Failed to update comment: ${response.status}`);
+  }
+  return await response.json() as PreviewComment;
+};
+
+export const resolveComment = async (id: string): Promise<PreviewComment> => {
+  const response = await fetch(
+    `/__mdview/comments/${encodeURIComponent(id)}/resolve`,
+    {
+      method: "POST",
+    },
+  );
+  if (!response.ok) {
+    throw new Error(`Failed to resolve comment: ${response.status}`);
+  }
+  return await response.json() as PreviewComment;
+};
+
+export const reopenComment = async (id: string): Promise<PreviewComment> => {
+  const response = await fetch(
+    `/__mdview/comments/${encodeURIComponent(id)}/reopen`,
+    {
+      method: "POST",
+    },
+  );
+  if (!response.ok) {
+    throw new Error(`Failed to reopen comment: ${response.status}`);
   }
   return await response.json() as PreviewComment;
 };

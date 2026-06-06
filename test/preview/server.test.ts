@@ -107,6 +107,8 @@ Deno.test("stores preview comments next to the Markdown file", async () => {
     assertEquals(createdComment.line, 3);
     assertEquals(createdComment.body, "Clarify this.");
     assertEquals(createdComment.originalLine, 3);
+    assertEquals(createdComment.resolved, false);
+    assertEquals(createdComment.resolvedAt, undefined);
     assertEquals(createdComment.sourceText, "Body");
     assertEquals(createdComment.stale, false);
 
@@ -139,6 +141,68 @@ Deno.test("stores preview comments next to the Markdown file", async () => {
     );
     const storedDocument = JSON.parse(storedText);
     assertEquals(storedDocument.comments, []);
+  } finally {
+    await Deno.remove(filePath).catch(() => {});
+    await Deno.remove(`${filePath}.mdview-comments.json`).catch(() => {});
+  }
+});
+
+Deno.test("resolves and reopens preview comments", async () => {
+  const filePath = await Deno.makeTempFile({
+    prefix: "mdview-",
+    suffix: ".md",
+  });
+  await Deno.writeTextFile(filePath, "# Title\n\nBody\n");
+  try {
+    const handler = createPreviewHandler(filePath);
+
+    const createResponse = await handler(
+      new Request("http://127.0.0.1:3334/__mdview/comments", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ line: 3, body: "Clarify this." }),
+      }),
+      {} as Deno.ServeHandlerInfo<Deno.NetAddr>,
+    );
+    const createdComment = await createResponse.json();
+
+    const resolveResponse = await handler(
+      new Request(
+        `http://127.0.0.1:3334/__mdview/comments/${createdComment.id}/resolve`,
+        { method: "POST" },
+      ),
+      {} as Deno.ServeHandlerInfo<Deno.NetAddr>,
+    );
+    const resolvedComment = await resolveResponse.json();
+    assertEquals(resolveResponse.status, 200);
+    assertEquals(resolvedComment.resolved, true);
+    assertEquals(typeof resolvedComment.resolvedAt, "string");
+
+    const resolvedDocumentResponse = await handler(
+      new Request("http://127.0.0.1:3334/__mdview/comments"),
+      {} as Deno.ServeHandlerInfo<Deno.NetAddr>,
+    );
+    const resolvedDocument = await resolvedDocumentResponse.json();
+    assertEquals(resolvedDocument.comments[0].resolved, true);
+
+    const reopenResponse = await handler(
+      new Request(
+        `http://127.0.0.1:3334/__mdview/comments/${createdComment.id}/reopen`,
+        { method: "POST" },
+      ),
+      {} as Deno.ServeHandlerInfo<Deno.NetAddr>,
+    );
+    const reopenedComment = await reopenResponse.json();
+    assertEquals(reopenResponse.status, 200);
+    assertEquals(reopenedComment.resolved, false);
+    assertEquals(reopenedComment.resolvedAt, undefined);
+
+    const storedText = await Deno.readTextFile(
+      `${filePath}.mdview-comments.json`,
+    );
+    const storedDocument = JSON.parse(storedText);
+    assertEquals(storedDocument.comments[0].resolved, false);
+    assertEquals(storedDocument.comments[0].resolvedAt, undefined);
   } finally {
     await Deno.remove(filePath).catch(() => {});
     await Deno.remove(`${filePath}.mdview-comments.json`).catch(() => {});

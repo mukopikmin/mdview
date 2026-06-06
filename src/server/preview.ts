@@ -28,6 +28,8 @@ export type PreviewComment = {
   id: string;
   line: number;
   originalLine: number;
+  resolved: boolean;
+  resolvedAt?: string;
   sourceHash?: string;
   sourceText?: string;
   stale: boolean;
@@ -110,6 +112,11 @@ const isPreviewComment = (value: unknown): value is PreviewComment => {
     typeof comment.updatedAt === "string";
 };
 
+const normalizePreviewComment = (comment: PreviewComment): PreviewComment => ({
+  ...comment,
+  resolved: comment.resolved === true,
+});
+
 const readCommentsDocument = async (
   filePath: string,
 ): Promise<PreviewCommentsDocument> => {
@@ -126,7 +133,9 @@ const readCommentsDocument = async (
   }
 
   return {
-    comments: parsed.comments.filter(isPreviewComment),
+    comments: parsed.comments.filter(isPreviewComment).map(
+      normalizePreviewComment,
+    ),
     filePath,
   };
 };
@@ -299,6 +308,7 @@ const handleCommentsRequest = async (
       id: crypto.randomUUID(),
       line,
       originalLine: line,
+      resolved: false,
       sourceHash: hashSourceText(sourceText),
       sourceText,
       stale: false,
@@ -320,11 +330,47 @@ const handleCommentsRequest = async (
   const id = decodeURIComponent(pathname.slice(`${commentsPath}/`.length));
   if (id === "") return createCommentNotFoundResponse();
 
+  const actionSeparator = id.indexOf("/");
+  const commentId = actionSeparator === -1 ? id : id.slice(0, actionSeparator);
+  const action = actionSeparator === -1
+    ? undefined
+    : id.slice(actionSeparator + 1);
+  if (commentId === "") return createCommentNotFoundResponse();
+
+  if (
+    request.method === "POST" && (action === "resolve" || action === "reopen")
+  ) {
+    const document = await readCommentsDocument(filePath);
+    const index = document.comments.findIndex((comment) =>
+      comment.id === commentId
+    );
+    if (index < 0) return createCommentNotFoundResponse();
+    const now = new Date().toISOString();
+    const updatedComment = {
+      ...document.comments[index],
+      resolved: action === "resolve",
+      resolvedAt: action === "resolve" ? now : undefined,
+      updatedAt: now,
+    };
+    const comments = [...document.comments];
+    comments[index] = updatedComment;
+    await writeCommentsDocument(filePath, { comments, filePath });
+    return createCommentResponse(
+      resolveCommentPosition(updatedComment, await Deno.readTextFile(filePath)),
+    );
+  }
+
+  if (action !== undefined) {
+    return new Response("Not found.", { status: 404 });
+  }
+
   if (request.method === "PUT") {
     const body = await parseJsonBody(request);
     const commentBody = parseCommentBody(body);
     const document = await readCommentsDocument(filePath);
-    const index = document.comments.findIndex((comment) => comment.id === id);
+    const index = document.comments.findIndex((comment) =>
+      comment.id === commentId
+    );
     if (index < 0) return createCommentNotFoundResponse();
     const updatedComment = {
       ...document.comments[index],
@@ -341,7 +387,9 @@ const handleCommentsRequest = async (
 
   if (request.method === "DELETE") {
     const document = await readCommentsDocument(filePath);
-    const comments = document.comments.filter((comment) => comment.id !== id);
+    const comments = document.comments.filter((comment) =>
+      comment.id !== commentId
+    );
     if (comments.length === document.comments.length) {
       return createCommentNotFoundResponse();
     }

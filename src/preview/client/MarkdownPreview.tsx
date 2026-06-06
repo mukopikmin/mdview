@@ -14,6 +14,7 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeHighlight from "rehype-highlight";
 import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
+import { CommentItem } from "./CommentItem";
 import type { PreviewComment } from "./comments";
 
 export type MarkdownPreviewProps = {
@@ -21,6 +22,7 @@ export type MarkdownPreviewProps = {
   markdown: string;
   onCreateComment: (line: number, body: string) => Promise<void>;
   onDeleteComment: (id: string) => Promise<void>;
+  onResolveComment: (id: string) => Promise<void>;
   onUpdateComment: (id: string, body: string) => Promise<void>;
 };
 
@@ -45,6 +47,7 @@ type CommentableBlockProps = {
   line: number;
   onCreateComment: (line: number, body: string) => Promise<void>;
   onDeleteComment: (id: string) => Promise<void>;
+  onResolveComment: (id: string) => Promise<void>;
   onUpdateComment: (id: string, body: string) => Promise<void>;
 };
 
@@ -59,11 +62,10 @@ const CommentableBlock = ({
   line,
   onCreateComment,
   onDeleteComment,
+  onResolveComment,
   onUpdateComment,
 }: CommentableBlockProps) => {
   const [draft, setDraft] = useState("");
-  const [editingCommentId, setEditingCommentId] = useState<string>();
-  const [editDraft, setEditDraft] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string>();
@@ -81,34 +83,6 @@ const CommentableBlock = ({
       await onCreateComment(line, body);
       setDraft("");
       setIsAdding(false);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : String(error));
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleUpdate = async (id: string) => {
-    const body = editDraft.trim();
-    if (!body) return;
-    setIsSaving(true);
-    setError(undefined);
-    try {
-      await onUpdateComment(id, body);
-      setEditingCommentId(undefined);
-      setEditDraft("");
-    } catch (error) {
-      setError(error instanceof Error ? error.message : String(error));
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    setIsSaving(true);
-    setError(undefined);
-    try {
-      await onDeleteComment(id);
     } catch (error) {
       setError(error instanceof Error ? error.message : String(error));
     } finally {
@@ -136,62 +110,15 @@ const CommentableBlock = ({
       </div>
       {(isAdding || comments.length > 0 || error) && (
         <div className="comment-thread">
-          <div className="comment-thread-heading">Line {line}</div>
           {comments.map((comment) => (
-            <div className="comment-item" key={comment.id}>
-              {editingCommentId === comment.id
-                ? (
-                  <>
-                    <textarea
-                      className="comment-input"
-                      onChange={(event) => setEditDraft(event.target.value)}
-                      value={editDraft}
-                    />
-                    <div className="comment-actions">
-                      <button
-                        disabled={isSaving}
-                        onClick={() =>
-                          handleUpdate(comment.id)}
-                        type="button"
-                      >
-                        Save
-                      </button>
-                      <button
-                        disabled={isSaving}
-                        onClick={() =>
-                          setEditingCommentId(undefined)}
-                        type="button"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </>
-                )
-                : (
-                  <>
-                    <div className="comment-body">{comment.body}</div>
-                    <div className="comment-actions">
-                      <button
-                        disabled={isSaving}
-                        onClick={() => {
-                          setEditingCommentId(comment.id);
-                          setEditDraft(comment.body);
-                        }}
-                        type="button"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        disabled={isSaving}
-                        onClick={() => handleDelete(comment.id)}
-                        type="button"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </>
-                )}
-            </div>
+            <CommentItem
+              comment={comment}
+              key={comment.id}
+              lineLabel={`Line ${line}`}
+              onDeleteComment={onDeleteComment}
+              onResolveComment={onResolveComment}
+              onUpdateComment={onUpdateComment}
+            />
           ))}
           {isAdding && (
             <div className="comment-form">
@@ -254,7 +181,10 @@ const createCommentableComponent = (
   commentsByLine: Map<number, PreviewComment[]>,
   props: Pick<
     MarkdownPreviewProps,
-    "onCreateComment" | "onDeleteComment" | "onUpdateComment"
+    | "onCreateComment"
+    | "onDeleteComment"
+    | "onResolveComment"
+    | "onUpdateComment"
   >,
 ) => {
   return ({ children, node, ...elementProps }: ComponentProps) => {
@@ -270,6 +200,7 @@ const createCommentableComponent = (
         line={line}
         onCreateComment={props.onCreateComment}
         onDeleteComment={props.onDeleteComment}
+        onResolveComment={props.onResolveComment}
         onUpdateComment={props.onUpdateComment}
       >
         {element}
@@ -282,7 +213,10 @@ const createCommentableListItem = (
   commentsByLine: Map<number, PreviewComment[]>,
   props: Pick<
     MarkdownPreviewProps,
-    "onCreateComment" | "onDeleteComment" | "onUpdateComment"
+    | "onCreateComment"
+    | "onDeleteComment"
+    | "onResolveComment"
+    | "onUpdateComment"
   >,
 ) => {
   return ({ children, node, ...elementProps }: ComponentProps) => {
@@ -301,6 +235,7 @@ const createCommentableListItem = (
           line={line}
           onCreateComment={props.onCreateComment}
           onDeleteComment={props.onDeleteComment}
+          onResolveComment={props.onResolveComment}
           onUpdateComment={props.onUpdateComment}
         >
           {children}
@@ -314,7 +249,10 @@ const createCommentablePre = (
   commentsByLine: Map<number, PreviewComment[]>,
   props: Pick<
     MarkdownPreviewProps,
-    "onCreateComment" | "onDeleteComment" | "onUpdateComment"
+    | "onCreateComment"
+    | "onDeleteComment"
+    | "onResolveComment"
+    | "onUpdateComment"
   >,
 ) => {
   return ({ children, node, ...elementProps }: ComponentProps) => {
@@ -333,6 +271,7 @@ const createCommentablePre = (
         line={line}
         onCreateComment={props.onCreateComment}
         onDeleteComment={props.onDeleteComment}
+        onResolveComment={props.onResolveComment}
         onUpdateComment={props.onUpdateComment}
       >
         {element}
@@ -346,6 +285,7 @@ export const MarkdownPreview = ({
   markdown,
   onCreateComment,
   onDeleteComment,
+  onResolveComment,
   onUpdateComment,
 }: MarkdownPreviewProps) => {
   const commentsByLine = useMemo(() => {
@@ -363,6 +303,7 @@ export const MarkdownPreview = ({
     const commentCallbacks = {
       onCreateComment,
       onDeleteComment,
+      onResolveComment,
       onUpdateComment,
     };
     return {
@@ -388,7 +329,13 @@ export const MarkdownPreview = ({
         );
       },
     };
-  }, [commentsByLine, onCreateComment, onDeleteComment, onUpdateComment]);
+  }, [
+    commentsByLine,
+    onCreateComment,
+    onDeleteComment,
+    onResolveComment,
+    onUpdateComment,
+  ]);
 
   return (
     <ReactMarkdown

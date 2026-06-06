@@ -4,6 +4,8 @@ import {
   deleteComment,
   loadComments,
   type PreviewComment,
+  reopenComment,
+  resolveComment,
   updateComment,
 } from "./comments";
 import { CommentList } from "./CommentList";
@@ -116,6 +118,32 @@ export const App = () => {
     });
   };
 
+  const handleResolveComment = async (id: string): Promise<void> => {
+    const comment = await resolveComment(id);
+    setState((current) => {
+      if (current.status !== "loaded") return current;
+      return {
+        ...current,
+        comments: current.comments.map((existing) =>
+          existing.id === comment.id ? comment : existing
+        ),
+      };
+    });
+  };
+
+  const handleReopenComment = async (id: string): Promise<void> => {
+    const comment = await reopenComment(id);
+    setState((current) => {
+      if (current.status !== "loaded") return current;
+      return {
+        ...current,
+        comments: current.comments.map((existing) =>
+          existing.id === comment.id ? comment : existing
+        ),
+      };
+    });
+  };
+
   if (state.status === "loading") {
     return (
       <>
@@ -138,8 +166,12 @@ export const App = () => {
     );
   }
 
-  const activeComments = state.comments.filter((comment) => !comment.stale);
-  const staleCommentCount = state.comments.length - activeComments.length;
+  const activeComments = state.comments.filter((comment) =>
+    !comment.resolved && !comment.stale
+  );
+  const staleCommentCount =
+    state.comments.filter((comment) => !comment.resolved && comment.stale)
+      .length;
 
   return (
     <>
@@ -176,6 +208,7 @@ export const App = () => {
               markdown={state.document.markdown}
               onCreateComment={handleCreateComment}
               onDeleteComment={handleDeleteComment}
+              onResolveComment={handleResolveComment}
               onUpdateComment={handleUpdateComment}
             />
           )
@@ -183,6 +216,8 @@ export const App = () => {
             <CommentList
               comments={state.comments}
               onDeleteComment={handleDeleteComment}
+              onReopenComment={handleReopenComment}
+              onResolveComment={handleResolveComment}
               onUpdateComment={handleUpdateComment}
             />
           )}

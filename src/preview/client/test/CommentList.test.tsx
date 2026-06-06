@@ -19,6 +19,7 @@ const createComment = (
   id: "comment-1",
   line: 3,
   originalLine: 3,
+  resolved: false,
   sourceHash: "example",
   sourceText: "Body",
   stale: false,
@@ -27,7 +28,7 @@ const createComment = (
 });
 
 describe("CommentList", () => {
-  it("groups active and stale comments", () => {
+  it("groups active, stale, and resolved comments", () => {
     render(
       <CommentList
         comments={[
@@ -38,8 +39,15 @@ describe("CommentList", () => {
             sourceText: "Old body",
             stale: true,
           }),
+          createComment({
+            body: "Resolved comment.",
+            id: "resolved",
+            resolved: true,
+          }),
         ]}
         onDeleteComment={async () => {}}
+        onReopenComment={async () => {}}
+        onResolveComment={async () => {}}
         onUpdateComment={async () => {}}
       />,
     );
@@ -48,22 +56,30 @@ describe("CommentList", () => {
       .not.toBeNull();
     expect(screen.getByRole("heading", { name: "Stale comments (1)" }))
       .not.toBeNull();
+    expect(screen.getByRole("heading", { name: "Resolved comments (1)" }))
+      .not.toBeNull();
     expect(screen.getByText("Active comment.")).not.toBeNull();
     expect(screen.getByText("Stale comment.")).not.toBeNull();
+    expect(screen.getByText("Resolved comment.")).not.toBeNull();
     expect(screen.getByText("Stale")).not.toBeNull();
-    expect(screen.getByText("Target line")).not.toBeNull();
-    expect(screen.getByText("Body")).not.toBeNull();
+    expect(screen.getByText("Resolved")).not.toBeNull();
+    expect(screen.getAllByText("Target line")).toHaveLength(2);
+    expect(screen.getAllByText("Body")).toHaveLength(2);
     expect(screen.getByText("Original line")).not.toBeNull();
     expect(screen.getByText("Old body")).not.toBeNull();
   });
 
   it("updates and deletes comments", async () => {
     const onDeleteComment = vi.fn(async () => {});
+    const onReopenComment = vi.fn(async () => {});
+    const onResolveComment = vi.fn(async () => {});
     const onUpdateComment = vi.fn(async () => {});
     render(
       <CommentList
         comments={[createComment({ body: "Original body." })]}
         onDeleteComment={onDeleteComment}
+        onReopenComment={onReopenComment}
+        onResolveComment={onResolveComment}
         onUpdateComment={onUpdateComment}
       />,
     );
@@ -83,6 +99,33 @@ describe("CommentList", () => {
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
     await waitFor(() =>
       expect(onDeleteComment).toHaveBeenCalledWith("comment-1")
+    );
+  });
+
+  it("resolves and reopens comments", async () => {
+    const onReopenComment = vi.fn(async () => {});
+    const onResolveComment = vi.fn(async () => {});
+    render(
+      <CommentList
+        comments={[
+          createComment({ id: "active" }),
+          createComment({ id: "resolved", resolved: true }),
+        ]}
+        onDeleteComment={async () => {}}
+        onReopenComment={onReopenComment}
+        onResolveComment={onResolveComment}
+        onUpdateComment={async () => {}}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Resolve" }));
+    await waitFor(() =>
+      expect(onResolveComment).toHaveBeenCalledWith("active")
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Reopen" }));
+    await waitFor(() =>
+      expect(onReopenComment).toHaveBeenCalledWith("resolved")
     );
   });
 });
