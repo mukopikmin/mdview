@@ -1,8 +1,8 @@
 {
   "nodeModulesDir": "none",
   "tasks": {
-    "start": "npm run build:client && DENO_NO_PACKAGE_JSON=1 deno run --allow-read --allow-net --allow-run src/main.ts",
-    "test": "npm run build:client && DENO_NO_PACKAGE_JSON=1 deno test --allow-read test",
+    "start": "npm run build:client && DENO_NO_PACKAGE_JSON=1 deno run --allow-read --allow-write --allow-net --allow-run --allow-env=BROWSER src/main.ts",
+    "test": "npm run build:client && DENO_NO_PACKAGE_JSON=1 deno test --allow-read --allow-write test",
     "notices": "DENO_NO_PACKAGE_JSON=1 deno run --allow-read --allow-write scripts/generate_third_party_notices.ts",
     "compile": "npm run build:client && DENO_NO_PACKAGE_JSON=1 deno run --allow-read --allow-write --allow-run=deno scripts/compile.ts",
     "dist": "npm run build:client && DENO_NO_PACKAGE_JSON=1 deno run --allow-read --allow-write --allow-run --allow-net=127.0.0.1:39731 scripts/build_release.ts",

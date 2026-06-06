@@ -4,6 +4,8 @@ dist-test/
 mdview
 THIRD_PARTY_NOTICES.md
 src/preview/static/
+*.mdview-comments.json
+.codex/
 
 npm-debug.log*
 .DS_Store

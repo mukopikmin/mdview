@@ -1,4 +1,11 @@
 import { useEffect, useState } from "react";
+import {
+  createComment,
+  deleteComment,
+  loadComments,
+  type PreviewComment,
+  updateComment,
+} from "./comments";
 import { connectHotReload } from "./hot_reload";
 import { MarkdownPreview } from "./MarkdownPreview";
 import { initializeMermaid } from "./mermaid";
@@ -12,7 +19,11 @@ type PreviewDocument = {
 
 type LoadState =
   | { status: "loading" }
-  | { document: PreviewDocument; status: "loaded" }
+  | {
+    comments: PreviewComment[];
+    document: PreviewDocument;
+    status: "loaded";
+  }
   | { message: string; status: "error" };
 
 const loadPreviewDocument = async (): Promise<PreviewDocument> => {
@@ -32,11 +43,12 @@ export const App = () => {
 
   useEffect(() => {
     let cancelled = false;
-    loadPreviewDocument()
-      .then((document) => {
+    Promise.all([loadPreviewDocument(), loadComments()])
+      .then(([document, commentsDocument]) => {
         if (cancelled) return;
         globalThis.document.title = document.title;
         setState({
+          comments: commentsDocument.comments,
           document,
           status: "loaded",
         });
@@ -58,6 +70,47 @@ export const App = () => {
     if (state.status !== "loaded") return;
     initializeMermaid();
   }, [state]);
+
+  const handleCreateComment = async (
+    line: number,
+    body: string,
+  ): Promise<void> => {
+    const comment = await createComment(line, body);
+    setState((current) => {
+      if (current.status !== "loaded") return current;
+      return {
+        ...current,
+        comments: [...current.comments, comment],
+      };
+    });
+  };
+
+  const handleUpdateComment = async (
+    id: string,
+    body: string,
+  ): Promise<void> => {
+    const comment = await updateComment(id, body);
+    setState((current) => {
+      if (current.status !== "loaded") return current;
+      return {
+        ...current,
+        comments: current.comments.map((existing) =>
+          existing.id === comment.id ? comment : existing
+        ),
+      };
+    });
+  };
+
+  const handleDeleteComment = async (id: string): Promise<void> => {
+    await deleteComment(id);
+    setState((current) => {
+      if (current.status !== "loaded") return current;
+      return {
+        ...current,
+        comments: current.comments.filter((comment) => comment.id !== id),
+      };
+    });
+  };
 
   if (state.status === "loading") {
     return (
@@ -90,7 +143,13 @@ export const App = () => {
           <a href={state.document.fileUrl}>{state.document.title}</a>. Refresh
           to reload changes.
         </header>
-        <MarkdownPreview markdown={state.document.markdown} />
+        <MarkdownPreview
+          comments={state.comments}
+          markdown={state.document.markdown}
+          onCreateComment={handleCreateComment}
+          onDeleteComment={handleDeleteComment}
+          onUpdateComment={handleUpdateComment}
+        />
       </main>
     </>
   );
