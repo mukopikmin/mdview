@@ -183,7 +183,7 @@ const CommentableBlock = ({
                   </>
                 )
                 : (
-                  <>
+                  <div className="comment-row">
                     <div className="comment-body">{comment.body}</div>
                     <div className="comment-actions">
                       <button
@@ -211,7 +211,7 @@ const CommentableBlock = ({
                         Delete
                       </button>
                     </div>
-                  </>
+                  </div>
                 )}
             </div>
           ))}

@@ -427,9 +427,9 @@ export const previewThemeCss = `
       }
 
       .comment-thread {
-        margin: -4px 0 16px;
+        margin: -6px 0 12px;
         border-left: 3px solid var(--color-accent);
-        padding: 8px 0 2px 12px;
+        padding: 6px 0 1px 10px;
       }
 
       .comment-thread-heading {
@@ -444,7 +444,13 @@ export const previewThemeCss = `
 
       .comment-item,
       .comment-form {
-        margin-bottom: 8px;
+        margin-bottom: 6px;
+      }
+
+      .comment-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
       }
 
       .comment-list {
@@ -508,10 +514,11 @@ export const previewThemeCss = `
       }
 
       .comment-body {
+        flex: 1;
         white-space: pre-wrap;
         border: 1px solid var(--color-border-muted);
         border-radius: 6px;
-        padding: 8px 10px;
+        padding: 5px 8px;
         background: var(--color-canvas-subtle);
         font-size: 0.9rem;
       }
@@ -519,7 +526,7 @@ export const previewThemeCss = `
       .comment-input {
         box-sizing: border-box;
         width: 100%;
-        min-height: 84px;
+        min-height: 56px;
         resize: vertical;
         border: 1px solid var(--color-border);
         border-radius: 6px;
@@ -539,18 +546,31 @@ export const previewThemeCss = `
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
-        margin-top: 6px;
+        margin-top: 4px;
+      }
+
+      .comment-row > .comment-actions {
+        flex: 0 0 auto;
+        margin-top: 0;
       }
 
       .comment-actions button {
         border: 1px solid var(--color-border);
         border-radius: 6px;
-        padding: 4px 10px;
+        padding: 2px 7px;
         background: var(--color-canvas);
         color: var(--color-text);
         cursor: pointer;
         font: inherit;
         font-size: 0.82rem;
+      }
+
+      .comment-list .comment-body {
+        padding: 8px 10px;
+      }
+
+      .comment-list .comment-input {
+        min-height: 84px;
       }
 
       .comment-actions button:disabled {
@@ -596,6 +616,10 @@ export const previewThemeCss = `
           position: static;
           margin: 0 0 6px;
           opacity: 1;
+        }
+
+        .comment-row {
+          flex-direction: column;
         }
       }
 `;
