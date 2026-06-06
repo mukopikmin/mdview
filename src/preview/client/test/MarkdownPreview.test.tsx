@@ -204,25 +204,6 @@ Body
       .toBe("Body");
   });
 
-  it("marks stale comments with their original source line", () => {
-    renderMarkdown("# Title\n\nChanged\n", [{
-      body: "Clarify this.",
-      createdAt: "2026-06-05T00:00:00.000Z",
-      id: "comment-1",
-      line: 3,
-      originalLine: 3,
-      sourceHash: "example",
-      sourceText: "Body",
-      stale: true,
-      updatedAt: "2026-06-05T00:00:00.000Z",
-    }]);
-
-    expect(screen.getByText("Stale")).not.toBeNull();
-    expect(screen.getByText(/Originally line 3:/)).not.toBeNull();
-    expect(screen.getByText("Body")).not.toBeNull();
-    expect(screen.getByText("Clarify this.")).not.toBeNull();
-  });
-
   it("does not add duplicate source line controls for blockquotes", () => {
     const { container } = renderMarkdown(`> Quoted text
 `);

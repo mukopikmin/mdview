@@ -6,6 +6,7 @@ import {
   type PreviewComment,
   updateComment,
 } from "./comments";
+import { CommentList } from "./CommentList";
 import { connectHotReload } from "./hot_reload";
 import { MarkdownPreview } from "./MarkdownPreview";
 import { initializeMermaid } from "./mermaid";
@@ -26,6 +27,8 @@ type LoadState =
   }
   | { message: string; status: "error" };
 
+type View = "comments" | "preview";
+
 const loadPreviewDocument = async (): Promise<PreviewDocument> => {
   const response = await fetch("/__mdview/document");
   if (!response.ok) {
@@ -36,6 +39,7 @@ const loadPreviewDocument = async (): Promise<PreviewDocument> => {
 
 export const App = () => {
   const [state, setState] = useState<LoadState>({ status: "loading" });
+  const [view, setView] = useState<View>("preview");
 
   useEffect(() => {
     return connectHotReload();
@@ -134,22 +138,54 @@ export const App = () => {
     );
   }
 
+  const activeComments = state.comments.filter((comment) => !comment.stale);
+  const staleCommentCount = state.comments.length - activeComments.length;
+
   return (
     <>
       <style>{previewThemeCss}</style>
       <main>
         <header>
-          Previewing{" "}
-          <a href={state.document.fileUrl}>{state.document.title}</a>. Refresh
-          to reload changes.
+          <div>
+            Previewing{" "}
+            <a href={state.document.fileUrl}>{state.document.title}</a>. Refresh
+            to reload changes.
+          </div>
+          <nav className="preview-nav" aria-label="Preview views">
+            <button
+              aria-current={view === "preview" ? "page" : undefined}
+              onClick={() => setView("preview")}
+              type="button"
+            >
+              Preview
+            </button>
+            <button
+              aria-current={view === "comments" ? "page" : undefined}
+              onClick={() => setView("comments")}
+              type="button"
+            >
+              Comments {state.comments.length}
+              {staleCommentCount > 0 && <span>Stale {staleCommentCount}</span>}
+            </button>
+          </nav>
         </header>
-        <MarkdownPreview
-          comments={state.comments}
-          markdown={state.document.markdown}
-          onCreateComment={handleCreateComment}
-          onDeleteComment={handleDeleteComment}
-          onUpdateComment={handleUpdateComment}
-        />
+        {view === "preview"
+          ? (
+            <MarkdownPreview
+              comments={activeComments}
+              markdown={state.document.markdown}
+              onCreateComment={handleCreateComment}
+              onDeleteComment={handleDeleteComment}
+              onUpdateComment={handleUpdateComment}
+            />
+          )
+          : (
+            <CommentList
+              comments={state.comments}
+              onDeleteComment={handleDeleteComment}
+              onUpdateComment={handleUpdateComment}
+            />
+          )}
       </main>
     </>
   );
