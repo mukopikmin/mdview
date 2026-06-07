@@ -1,5 +1,5 @@
 import { basename, toFileUrl } from "@std/path";
-import { noStoreJson } from "./responses.ts";
+import { noStoreJson } from "../responses.ts";
 
 export const handlePreviewDocumentRequest = async (
   filePath: string,

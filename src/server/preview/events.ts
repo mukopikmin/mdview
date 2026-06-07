@@ -1,5 +1,5 @@
 import { dirname, resolve } from "@std/path";
-import { formatLogMessage } from "../log.ts";
+import { formatLogMessage } from "../../log.ts";
 
 type EventStreamOptions = {
   onEventStreamClose?: () => void;

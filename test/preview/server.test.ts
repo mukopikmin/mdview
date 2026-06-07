@@ -1,6 +1,6 @@
 import { assertEquals } from "@std/assert";
 
-import { formatPreviewClosedLog } from "../../src/server/preview.ts";
+import { formatPreviewClosedLog } from "../../src/server/mod.ts";
 
 Deno.test("formats preview closed log messages", () => {
   assertEquals(

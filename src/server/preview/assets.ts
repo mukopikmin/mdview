@@ -1,7 +1,7 @@
 import { normalize } from "@std/path";
-import { notFoundResponse } from "./responses.ts";
+import { notFoundResponse } from "../responses.ts";
 
-const previewAssetRoot = new URL("../preview/static/", import.meta.url);
+const previewAssetRoot = new URL("../../preview/static/", import.meta.url);
 
 const readAsset = async (
   pathname: string,

@@ -1,7 +1,7 @@
 import { assertEquals } from "@std/assert";
 
 import { handlePreviewDocumentRequest } from "./document.ts";
-import { createTempMarkdown, removeTempMarkdown } from "./test_helpers.ts";
+import { createTempMarkdown, removeTempMarkdown } from "../test_helpers.ts";
 
 Deno.test("returns the current Markdown document without caching", async () => {
   const filePath = await createTempMarkdown("first");

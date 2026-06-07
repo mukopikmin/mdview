@@ -3,7 +3,7 @@ import { assertEquals } from "@std/assert";
 import {
   createPreviewHandler,
   formatPreviewReloadLog,
-} from "../../src/server/preview.ts";
+} from "../../src/server/mod.ts";
 
 Deno.test("formats server-side hot reload log messages", () => {
   assertEquals(

@@ -1,6 +1,6 @@
 import { assertEquals } from "@std/assert";
 
-import { createPreviewHandler } from "../../src/server/preview.ts";
+import { createPreviewHandler } from "../../src/server/mod.ts";
 
 Deno.test("stores preview comments next to the Markdown file", async () => {
   const filePath = await Deno.makeTempFile({

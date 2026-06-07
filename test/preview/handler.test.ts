@@ -1,6 +1,6 @@
 import { assertEquals } from "@std/assert";
 
-import { createPreviewHandler } from "../../src/server/preview.ts";
+import { createPreviewHandler } from "../../src/server/mod.ts";
 
 Deno.test("serves hot reload events as an SSE stream", async () => {
   const filePath = "test/e2e/fixtures/comprehensive.md";
