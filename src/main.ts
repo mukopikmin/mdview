@@ -1,7 +1,12 @@
 #!/usr/bin/env -S deno run --allow-read --allow-write --allow-net --allow-run --allow-env=BROWSER,HOME,XDG_DATA_HOME,APPDATA,MDVIEW_COMMENTS_DIR
 import { CliUsageError, parseArgs, usage, version } from "./cli/args.ts";
 import { openBrowser } from "./cli/browser.ts";
-import { formatCommentFilesTable, listCommentFiles } from "./cli/comments.ts";
+import {
+  formatCommentFilesTable,
+  listCommentFiles,
+  removeCommentFile,
+  shouldRemoveCommentFile,
+} from "./cli/comments.ts";
 import { logInfo } from "./log.ts";
 import { startPreviewServer } from "./server/mod.ts";
 
@@ -24,6 +29,24 @@ const main = async (): Promise<void> => {
       console.error(`Warning: ${warning}`);
     }
     console.log(formatCommentFilesTable(result.entries).trimEnd());
+    return;
+  }
+
+  if (options.command === "comments-rm") {
+    if (!options.commentFile) {
+      throw new CliUsageError("Missing comment file.");
+    }
+
+    if (!options.force) {
+      const answer = prompt(`Remove ${options.commentFile}? [y/N]`);
+      if (!shouldRemoveCommentFile(answer ?? "")) {
+        console.log("Not removed.");
+        return;
+      }
+    }
+
+    await removeCommentFile(options.commentFile);
+    console.log(`Removed ${options.commentFile}`);
     return;
   }
 

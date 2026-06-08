@@ -1,10 +1,12 @@
-import { assertEquals, assertStringIncludes } from "@std/assert";
+import { assertEquals, assertRejects, assertStringIncludes } from "@std/assert";
 import { basename, join } from "@std/path";
 
 import {
   formatCommentFilesTable,
   listCommentFiles,
   type ListedCommentFile,
+  removeCommentFile,
+  shouldRemoveCommentFile,
 } from "./comments.ts";
 import {
   getCommentsDirectoryPath,
@@ -95,5 +97,55 @@ Deno.test("skips malformed comment files with a warning", async () => {
     assertEquals(result.entries, []);
     assertEquals(result.warnings.length, 1);
     assertStringIncludes(result.warnings[0], "Skipping broken.json:");
+  });
+});
+
+Deno.test("parses confirmation answers for removing comment files", () => {
+  assertEquals(shouldRemoveCommentFile("y"), true);
+  assertEquals(shouldRemoveCommentFile("YES"), true);
+  assertEquals(shouldRemoveCommentFile(" yes "), true);
+  assertEquals(shouldRemoveCommentFile(""), false);
+  assertEquals(shouldRemoveCommentFile("n"), false);
+});
+
+Deno.test("removes a comment file from the configured comments directory", async () => {
+  await withTempCommentsDirectory(async () => {
+    const filePath = await createTempMarkdown();
+    try {
+      await writeCommentsDocument(filePath, {
+        comments: [],
+        filePath,
+      });
+      const commentFileName = basename(getCommentsFilePath(filePath));
+
+      await removeCommentFile(commentFileName);
+
+      assertEquals(await listCommentFiles(), {
+        entries: [],
+        warnings: [],
+      });
+    } finally {
+      await removeTempMarkdown(filePath);
+    }
+  });
+});
+
+Deno.test("rejects unsafe or missing comment files when removing", async () => {
+  await withTempCommentsDirectory(async () => {
+    await assertRejects(
+      () => removeCommentFile("../README.md-12345678.json"),
+      Error,
+      "Comment file name must be a .json file without path separators.",
+    );
+    await assertRejects(
+      () => removeCommentFile("README.md-12345678.txt"),
+      Error,
+      "Comment file name must be a .json file without path separators.",
+    );
+    await assertRejects(
+      () => removeCommentFile("README.md-12345678.json"),
+      Error,
+      "Comment file not found: README.md-12345678.json",
+    );
   });
 });

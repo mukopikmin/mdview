@@ -88,6 +88,19 @@ The list shows each stored comment file, the target Markdown path, comment
 count, unresolved comment count, and the latest `updatedAt` value from the
 stored comments.
 
+Remove a stored comment file by passing the `FILE` value from
+`mdview comments list`:
+
+```sh
+mdview comments rm README.md-1a2b3c4d.json
+```
+
+The remove command prompts before deleting. Pass `--force` to skip the prompt:
+
+```sh
+mdview comments rm README.md-1a2b3c4d.json --force
+```
+
 ## Options
 
 | Option              | Description                                                | Default                |
