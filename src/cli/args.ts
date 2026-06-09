@@ -2,8 +2,10 @@ import { parseArgs as parseCliArgs } from "@std/cli/parse-args";
 export { version } from "../version.ts";
 
 export type CliOptions = {
-  command?: "comments-list";
+  command?: "comments-list" | "comments-rm";
+  commentFile?: string;
   file: string | undefined;
+  force: boolean;
   host: string;
   keepAlive: boolean;
   open: boolean;
@@ -22,12 +24,14 @@ export class CliUsageError extends Error {
 export const usage = `Usage:
   mdview <file.md> [--port <port>] [--host <host>] [--no-open] [--keep-alive]
   mdview comments list
+  mdview comments rm <comment-file> [--force]
 
 Options:
   -p, --port   Port to bind. Defaults to 3334.
   --host       Host to bind. Defaults to 127.0.0.1.
   --no-open    Do not open the preview in your browser automatically.
   --keep-alive Keep the server running after the browser tab is closed.
+  --force      Remove comment files without prompting.
   -v, --version
                Show version.
   -h, --help   Show this help message.
@@ -42,7 +46,7 @@ export const parseArgs = (argv: string[]): CliOptions => {
         p: "port",
         v: "version",
       },
-      boolean: ["help", "keep-alive", "no-open", "version"],
+      boolean: ["force", "help", "keep-alive", "no-open", "version"],
       default: {
         host: "127.0.0.1",
         port: "3334",
@@ -59,24 +63,51 @@ export const parseArgs = (argv: string[]): CliOptions => {
     );
   }
 
+  const rejectCommentCommandPreviewOptions = (command: string): void => {
+    if (
+      flags.host !== "127.0.0.1" || flags.port !== "3334" ||
+      flags["keep-alive"] || flags["no-open"]
+    ) {
+      throw new CliUsageError(
+        `${command} does not accept preview options.`,
+      );
+    }
+  };
+
   if (flags._.length > 1) {
     if (
       flags._.length === 2 &&
       flags._[0]?.toString() === "comments" &&
       flags._[1]?.toString() === "list"
     ) {
-      if (
-        flags.host !== "127.0.0.1" || flags.port !== "3334" ||
-        flags["keep-alive"] || flags["no-open"]
-      ) {
-        throw new CliUsageError(
-          "comments list does not accept preview options.",
-        );
-      }
+      rejectCommentCommandPreviewOptions("comments list");
 
       const options: CliOptions = {
         command: "comments-list",
         file: undefined,
+        force: false,
+        host: "127.0.0.1",
+        keepAlive: false,
+        open: true,
+        port: 3334,
+      };
+      if (flags.help) options.help = true;
+      if (flags.version) options.version = true;
+      return options;
+    }
+
+    if (
+      flags._.length === 3 &&
+      flags._[0]?.toString() === "comments" &&
+      flags._[1]?.toString() === "rm"
+    ) {
+      rejectCommentCommandPreviewOptions("comments rm");
+
+      const options: CliOptions = {
+        command: "comments-rm",
+        commentFile: flags._[2]?.toString(),
+        file: undefined,
+        force: Boolean(flags.force),
         host: "127.0.0.1",
         keepAlive: false,
         open: true,
@@ -102,6 +133,7 @@ export const parseArgs = (argv: string[]): CliOptions => {
 
   const options: CliOptions = {
     file: flags._[0]?.toString(),
+    force: false,
     host: flags.host?.toString() ?? "127.0.0.1",
     keepAlive: Boolean(flags["keep-alive"]),
     open: !flags["no-open"],

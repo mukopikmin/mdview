@@ -49,6 +49,14 @@ const latestUpdatedAt = (
 ): string | undefined =>
   comments.map((comment) => comment.updatedAt).sort().at(-1);
 
+const isSafeCommentFileName = (fileName: string): boolean =>
+  fileName !== "" &&
+  fileName === basename(fileName) &&
+  !fileName.includes("/") &&
+  !fileName.includes("\\") &&
+  !fileName.includes("..") &&
+  fileName.endsWith(".json");
+
 export const listCommentFiles = async (): Promise<ListCommentFilesResult> => {
   const commentsDirectoryPath = getCommentsDirectoryPath();
   const directoryEntries = await Array.fromAsync(
@@ -116,4 +124,26 @@ export const formatCommentFilesTable = (
     row.map((value, index) => pad(value, widths[index])).join("  ").trimEnd();
 
   return `${formatRow(headers)}\n${rows.map(formatRow).join("\n")}\n`;
+};
+
+export const shouldRemoveCommentFile = (answer: string): boolean =>
+  ["y", "yes"].includes(answer.trim().toLowerCase());
+
+export const removeCommentFile = async (
+  fileName: string,
+): Promise<void> => {
+  if (!isSafeCommentFileName(fileName)) {
+    throw new Error(
+      "Comment file name must be a .json file without path separators.",
+    );
+  }
+
+  await Deno.remove(join(getCommentsDirectoryPath(), fileName)).catch(
+    (error) => {
+      if (error instanceof Deno.errors.NotFound) {
+        throw new Error(`Comment file not found: ${fileName}`);
+      }
+      throw error;
+    },
+  );
 };
