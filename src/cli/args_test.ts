@@ -49,9 +49,21 @@ Deno.test("parses keep-alive option", () => {
   });
 });
 
+Deno.test("parses comments list command", () => {
+  assertEquals(parseArgs(["comments", "list"]), {
+    command: "comments-list",
+    file: undefined,
+    host: "127.0.0.1",
+    keepAlive: false,
+    open: true,
+    port: 3334,
+  });
+});
+
 Deno.test("parses help", () => {
   assertEquals(parseArgs(["--help"]).help, true);
   assertMatch(usage, /Defaults to 3334/);
+  assertMatch(usage, /comments list/);
   assertMatch(usage, /--keep-alive/);
 });
 
@@ -84,6 +96,10 @@ Deno.test("throws usage errors for invalid options", () => {
   );
   assertInstanceOf(
     assertThrows(() => parseArgs(["a.md", "b.md"])),
+    CliUsageError,
+  );
+  assertInstanceOf(
+    assertThrows(() => parseArgs(["comments", "list", "--port", "4000"])),
     CliUsageError,
   );
 });

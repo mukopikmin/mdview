@@ -2,6 +2,7 @@ import { parseArgs as parseCliArgs } from "@std/cli/parse-args";
 export { version } from "../version.ts";
 
 export type CliOptions = {
+  command?: "comments-list";
   file: string | undefined;
   host: string;
   keepAlive: boolean;
@@ -18,8 +19,9 @@ export class CliUsageError extends Error {
   }
 }
 
-export const usage =
-  `Usage: mdview <file.md> [--port <port>] [--host <host>] [--no-open] [--keep-alive]
+export const usage = `Usage:
+  mdview <file.md> [--port <port>] [--host <host>] [--no-open] [--keep-alive]
+  mdview comments list
 
 Options:
   -p, --port   Port to bind. Defaults to 3334.
@@ -58,6 +60,33 @@ export const parseArgs = (argv: string[]): CliOptions => {
   }
 
   if (flags._.length > 1) {
+    if (
+      flags._.length === 2 &&
+      flags._[0]?.toString() === "comments" &&
+      flags._[1]?.toString() === "list"
+    ) {
+      if (
+        flags.host !== "127.0.0.1" || flags.port !== "3334" ||
+        flags["keep-alive"] || flags["no-open"]
+      ) {
+        throw new CliUsageError(
+          "comments list does not accept preview options.",
+        );
+      }
+
+      const options: CliOptions = {
+        command: "comments-list",
+        file: undefined,
+        host: "127.0.0.1",
+        keepAlive: false,
+        open: true,
+        port: 3334,
+      };
+      if (flags.help) options.help = true;
+      if (flags.version) options.version = true;
+      return options;
+    }
+
     throw new CliUsageError(
       "Only one Markdown file can be previewed at a time.",
     );

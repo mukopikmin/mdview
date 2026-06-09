@@ -78,6 +78,16 @@ as repository changes. The default comments directory is:
 
 Set `MDVIEW_COMMENTS_DIR` to choose a different comments directory.
 
+List stored comment files:
+
+```sh
+mdview comments list
+```
+
+The list shows each stored comment file, the target Markdown path, comment
+count, unresolved comment count, and the latest `updatedAt` value from the
+stored comments.
+
 ## Options
 
 | Option              | Description                                                | Default                |
