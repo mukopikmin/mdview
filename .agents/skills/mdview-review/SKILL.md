@@ -30,10 +30,9 @@ comment storage files directly.
 5. Apply actionable comments as one coherent edit. Preserve the document's
    language, tone, structure, terminology, links, and formatting unless the
    feedback requests otherwise.
-6. Review the resulting diff and run relevant documentation checks available
-   in the project.
-7. Resolve only comments that were successfully addressed or already
-   satisfied:
+6. Review the resulting diff and run relevant documentation checks available in
+   the project.
+7. Resolve only comments that were successfully addressed or already satisfied:
 
    ```sh
    mdview comments resolve <markdown-path> <comment-id>...
