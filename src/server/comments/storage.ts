@@ -1,4 +1,8 @@
-import type { PreviewComment, PreviewCommentsDocument } from "./types.ts";
+import type {
+  PreviewComment,
+  PreviewCommentReply,
+  PreviewCommentsDocument,
+} from "./types.ts";
 import { basename, join } from "@std/path";
 
 const commentsDirectoryName = "mdview";
@@ -88,8 +92,22 @@ const isPreviewComment = (value: unknown): value is PreviewComment => {
     typeof comment.updatedAt === "string";
 };
 
+const isPreviewCommentReply = (
+  value: unknown,
+): value is PreviewCommentReply => {
+  if (typeof value !== "object" || value === null) return false;
+  const reply = value as Partial<PreviewCommentReply>;
+  return typeof reply.id === "string" &&
+    typeof reply.body === "string" &&
+    typeof reply.createdAt === "string" &&
+    typeof reply.updatedAt === "string";
+};
+
 const normalizePreviewComment = (comment: PreviewComment): PreviewComment => ({
   ...comment,
+  replies: Array.isArray(comment.replies)
+    ? comment.replies.filter(isPreviewCommentReply)
+    : [],
   resolved: comment.resolved === true,
 });
 

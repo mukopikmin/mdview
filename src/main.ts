@@ -6,6 +6,7 @@ import {
   inspectComments,
   listCommentFiles,
   removeCommentFile,
+  replyToComment,
   resolveComments,
   shouldRemoveCommentFile,
 } from "./cli/comments.ts";
@@ -49,6 +50,27 @@ const main = async (): Promise<void> => {
     console.log(
       JSON.stringify(
         await resolveComments(options.file, options.commentIds ?? []),
+        null,
+        2,
+      ),
+    );
+    return;
+  }
+
+  if (options.command === "comments-reply") {
+    if (!options.file) {
+      throw new CliUsageError("Missing Markdown file.");
+    }
+    if (!options.commentId) {
+      throw new CliUsageError("Missing comment ID.");
+    }
+    console.log(
+      JSON.stringify(
+        await replyToComment(
+          options.file,
+          options.commentId,
+          options.replyBody ?? "",
+        ),
         null,
         2,
       ),

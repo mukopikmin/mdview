@@ -5,8 +5,10 @@ export type CliOptions = {
   command?:
     | "comments-inspect"
     | "comments-list"
+    | "comments-reply"
     | "comments-resolve"
     | "comments-rm";
+  commentId?: string;
   commentIds?: string[];
   commentFile?: string;
   file: string | undefined;
@@ -15,6 +17,7 @@ export type CliOptions = {
   keepAlive: boolean;
   open: boolean;
   port: number;
+  replyBody?: string;
   help?: boolean;
   version?: boolean;
 };
@@ -29,6 +32,7 @@ export class CliUsageError extends Error {
 export const usage = `Usage:
   mdview <file.md> [--port <port>] [--host <host>] [--no-open] [--keep-alive]
   mdview comments inspect <file.md>
+  mdview comments reply <file.md> <comment-id> <body>
   mdview comments resolve <file.md> <comment-id>...
   mdview comments list
   mdview comments rm <comment-file> [--force]
@@ -137,6 +141,28 @@ export const parseArgs = (argv: string[]): CliOptions => {
         keepAlive: false,
         open: true,
         port: 3334,
+      };
+      if (flags.help) options.help = true;
+      if (flags.version) options.version = true;
+      return options;
+    }
+
+    if (
+      flags._.length >= 5 &&
+      flags._[1]?.toString() === "reply"
+    ) {
+      rejectCommentCommandPreviewOptions("comments reply");
+
+      const options: CliOptions = {
+        command: "comments-reply",
+        commentId: flags._[3]?.toString(),
+        file: flags._[2]?.toString(),
+        force: false,
+        host: "127.0.0.1",
+        keepAlive: false,
+        open: true,
+        port: 3334,
+        replyBody: flags._.slice(4).map(String).join(" "),
       };
       if (flags.help) options.help = true;
       if (flags.version) options.version = true;

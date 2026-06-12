@@ -93,6 +93,12 @@ Inspect unresolved comments for a Markdown file as JSON:
 mdview comments inspect README.md
 ```
 
+Reply to a comment without resolving it:
+
+```sh
+mdview comments reply README.md <comment-id> "Need more context."
+```
+
 Mark one or more comments as resolved:
 
 ```sh

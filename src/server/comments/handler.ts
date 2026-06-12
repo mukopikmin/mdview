@@ -1,4 +1,4 @@
-import type { PreviewComment } from "./types.ts";
+import type { PreviewComment, PreviewCommentReply } from "./types.ts";
 import {
   getLineText,
   hashSourceText,
@@ -86,6 +86,7 @@ const createComment = async (
     id: crypto.randomUUID(),
     line,
     originalLine: line,
+    replies: [],
     resolved: false,
     sourceHash: hashSourceText(sourceText),
     sourceText,
@@ -99,6 +100,39 @@ const createComment = async (
   };
   await writeCommentsDocument(filePath, updatedDocument);
   return createCommentResponse(comment);
+};
+
+const createReply = async (
+  request: Request,
+  filePath: string,
+  commentId: string,
+): Promise<Response> => {
+  const document = await readCommentsDocument(filePath);
+  const index = document.comments.findIndex((comment) =>
+    comment.id === commentId
+  );
+  if (index < 0) return createCommentNotFoundResponse();
+
+  const body = await parseJsonBody(request);
+  const replyBody = parseCommentBody(body);
+  const now = new Date().toISOString();
+  const reply: PreviewCommentReply = {
+    body: replyBody,
+    createdAt: now,
+    id: crypto.randomUUID(),
+    updatedAt: now,
+  };
+  const updatedComment = {
+    ...document.comments[index],
+    replies: [...(document.comments[index].replies ?? []), reply],
+    updatedAt: now,
+  };
+  const comments = [...document.comments];
+  comments[index] = updatedComment;
+  await writeCommentsDocument(filePath, { comments, filePath });
+  return createCommentResponse(
+    resolveCommentPosition(updatedComment, await Deno.readTextFile(filePath)),
+  );
 };
 
 const setCommentResolution = async (
@@ -196,6 +230,10 @@ export const handleCommentsRequest = async (
       route.commentId,
       route.action === "resolve",
     );
+  }
+
+  if (request.method === "POST" && route.action === "replies") {
+    return await createReply(request, filePath, route.commentId);
   }
 
   if (route.action !== undefined) return notFoundResponse();

@@ -6,6 +6,7 @@ export type CommentItemProps = {
   comment: PreviewComment;
   lineLabel: string;
   onDeleteComment: (id: string) => Promise<void>;
+  onReplyComment: (id: string, body: string) => Promise<void>;
   onReopenComment?: (id: string) => Promise<void>;
   onResolveComment?: (id: string) => Promise<void>;
   onUpdateComment: (id: string, body: string) => Promise<void>;
@@ -21,6 +22,7 @@ export const CommentItem = ({
   comment,
   lineLabel,
   onDeleteComment,
+  onReplyComment,
   onReopenComment,
   onResolveComment,
   onUpdateComment,
@@ -28,6 +30,8 @@ export const CommentItem = ({
   showState = false,
 }: CommentItemProps) => {
   const [draft, setDraft] = useState(comment.body);
+  const [replyDraft, setReplyDraft] = useState("");
+  const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string>();
@@ -54,6 +58,22 @@ export const CommentItem = ({
       await onDeleteComment(comment.id);
     } catch (error) {
       setError(error instanceof Error ? error.message : String(error));
+      setIsSaving(false);
+    }
+  };
+
+  const handleReply = async () => {
+    const body = replyDraft.trim();
+    if (!body) return;
+    setIsSaving(true);
+    setError(undefined);
+    try {
+      await onReplyComment(comment.id, body);
+      setReplyDraft("");
+      setIsReplying(false);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : String(error));
+    } finally {
       setIsSaving(false);
     }
   };
@@ -123,7 +143,16 @@ export const CommentItem = ({
               )}
             <button
               disabled={isSaving}
-              onClick={() => setIsEditing(true)}
+              onClick={() =>
+                setIsReplying((value) => !value)}
+              type="button"
+            >
+              Reply
+            </button>
+            <button
+              disabled={isSaving}
+              onClick={() =>
+                setIsEditing(true)}
               type="button"
             >
               Edit
@@ -170,6 +199,46 @@ export const CommentItem = ({
           </>
         )
         : <div className="comment-body">{comment.body}</div>}
+      {(comment.replies ?? []).length > 0 && (
+        <div className="comment-replies">
+          {(comment.replies ?? []).map((reply) => (
+            <div className="comment-reply" key={reply.id}>
+              <div className="comment-reply-label">Reply</div>
+              <div className="comment-body">{reply.body}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      {isReplying && (
+        <div className="comment-reply-form">
+          <textarea
+            aria-label="Reply body"
+            className="comment-input"
+            onChange={(event) => setReplyDraft(event.target.value)}
+            placeholder="Write a reply..."
+            value={replyDraft}
+          />
+          <div className="comment-actions">
+            <button
+              disabled={isSaving || replyDraft.trim() === ""}
+              onClick={handleReply}
+              type="button"
+            >
+              Add reply
+            </button>
+            <button
+              disabled={isSaving}
+              onClick={() => {
+                setReplyDraft("");
+                setIsReplying(false);
+              }}
+              type="button"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
       {error && <div className="comment-error">{error}</div>}
     </article>
   );

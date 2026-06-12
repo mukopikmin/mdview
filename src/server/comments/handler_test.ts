@@ -109,6 +109,53 @@ testWithTempComments("trims comment bodies before storing them", async () => {
   }
 });
 
+testWithTempComments("adds replies to comments", async () => {
+  const filePath = await createTempMarkdown();
+  const handler = createPreviewHandler(filePath);
+  try {
+    const createResponse = await requestComments(
+      handler,
+      "/__mdview/comments",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ line: 3, body: "Question" }),
+      },
+    );
+    const createdComment = await createResponse.json();
+
+    const replyResponse = await requestComments(
+      handler,
+      `/__mdview/comments/${createdComment.id}/replies`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ body: "  More context.  " }),
+      },
+    );
+    const updatedComment = await replyResponse.json();
+
+    assertEquals(replyResponse.status, 200);
+    assertEquals(updatedComment.replies.length, 1);
+    assertEquals(updatedComment.replies[0].body, "More context.");
+    assertMatch(updatedComment.replies[0].id, /^[0-9a-f-]{36}$/);
+
+    const invalidResponse = await requestComments(
+      handler,
+      `/__mdview/comments/${createdComment.id}/replies`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ body: " " }),
+      },
+    );
+    assertEquals(invalidResponse.status, 400);
+    assertEquals(await invalidResponse.text(), "Comment body is required.");
+  } finally {
+    await removeTempMarkdown(filePath);
+  }
+});
+
 testWithTempComments(
   "returns not found for missing comments and unknown actions",
   async () => {
@@ -120,6 +167,7 @@ testWithTempComments(
         ["DELETE", "/__mdview/comments/missing", "Comment not found."],
         ["POST", "/__mdview/comments/missing/resolve", "Comment not found."],
         ["POST", "/__mdview/comments/missing/reopen", "Comment not found."],
+        ["POST", "/__mdview/comments/missing/replies", "Comment not found."],
         ["POST", "/__mdview/comments/missing/unknown", "Not found."],
         ["GET", "/__mdview/comments/", "Comment not found."],
       ];

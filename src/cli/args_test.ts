@@ -93,6 +93,31 @@ Deno.test("parses comments resolve command", () => {
   );
 });
 
+Deno.test("parses comments reply command", () => {
+  assertEquals(
+    parseArgs([
+      "comments",
+      "reply",
+      "README.md",
+      "comment-1",
+      "Need",
+      "more",
+      "details.",
+    ]),
+    {
+      command: "comments-reply",
+      commentId: "comment-1",
+      file: "README.md",
+      force: false,
+      host: "127.0.0.1",
+      keepAlive: false,
+      open: true,
+      port: 3334,
+      replyBody: "Need more details.",
+    },
+  );
+});
+
 Deno.test("parses comments rm command", () => {
   assertEquals(parseArgs(["comments", "rm", "README.md-12345678.json"]), {
     command: "comments-rm",
@@ -124,6 +149,7 @@ Deno.test("parses help", () => {
   assertMatch(usage, /Defaults to 3334/);
   assertMatch(usage, /comments list/);
   assertMatch(usage, /comments inspect/);
+  assertMatch(usage, /comments reply/);
   assertMatch(usage, /comments resolve/);
   assertMatch(usage, /comments rm/);
   assertMatch(usage, /--keep-alive/);
@@ -176,6 +202,12 @@ Deno.test("throws usage errors for invalid options", () => {
   );
   assertInstanceOf(
     assertThrows(() => parseArgs(["comments", "resolve", "README.md"])),
+    CliUsageError,
+  );
+  assertInstanceOf(
+    assertThrows(() =>
+      parseArgs(["comments", "reply", "README.md", "comment-1"])
+    ),
     CliUsageError,
   );
 });

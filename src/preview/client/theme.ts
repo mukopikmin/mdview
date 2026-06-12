@@ -569,6 +569,25 @@ export const previewThemeCss = `
         padding: 8px 10px;
       }
 
+      .comment-replies {
+        display: grid;
+        gap: 6px;
+        margin: 8px 0 0 16px;
+        border-left: 2px solid var(--color-border);
+        padding-left: 10px;
+      }
+
+      .comment-reply-label {
+        margin-bottom: 3px;
+        color: var(--color-text-muted);
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+
+      .comment-reply-form {
+        margin-top: 8px;
+      }
+
       .comment-list .comment-input {
         min-height: 84px;
       }

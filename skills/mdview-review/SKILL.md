@@ -25,21 +25,31 @@ comment storage files directly.
 4. Classify each comment:
    - **Actionable**: specific enough to implement.
    - **Already satisfied**: the document already meets the request.
-   - **Ambiguous**: the intent or target cannot be established safely.
+   - **Needs clarification**: a concrete question can unblock the work.
+   - **Ambiguous**: the intent or target cannot be established safely and no
+     useful question can be formed.
    - **Invalid**: the request conflicts with verified facts or requirements.
-5. Apply actionable comments as one coherent edit. Preserve the document's
+5. Reply to comments that need clarification and leave them unresolved:
+
+   ```sh
+   mdview comments reply <markdown-path> <comment-id> "<question>"
+   ```
+
+   Keep the question concise and state the missing decision or information.
+6. Apply actionable comments as one coherent edit. Preserve the document's
    language, tone, structure, terminology, links, and formatting unless the
    feedback requests otherwise.
-6. Review the resulting diff and run relevant documentation checks available in
+7. Review the resulting diff and run relevant documentation checks available in
    the project.
-7. Resolve only comments that were successfully addressed or already satisfied:
+8. Resolve only comments that were successfully addressed or already satisfied:
 
    ```sh
    mdview comments resolve <markdown-path> <comment-id>...
    ```
 
-8. Run `mdview comments inspect <markdown-path>` again. Report the changed
-   document, resolved comment IDs, and comments left open with their reasons.
+9. Run `mdview comments inspect <markdown-path>` again. Report the changed
+   document, replies posted, resolved comment IDs, and comments left open with
+   their reasons.
 
 ## Interpretation Rules
 
@@ -50,6 +60,8 @@ comment storage files directly.
   Leave those comments open and explain what information is required.
 - Combine overlapping comments into one consistent edit.
 - Do not act on vague or nonsensical feedback speculatively.
+- Do not reply merely to acknowledge a comment. Reply only when the response
+  communicates useful information or asks a question needed to continue.
 - Do not resolve comments merely because they were reviewed.
 - Do not use `mdview comments rm`; it deletes the entire stored review file.
 

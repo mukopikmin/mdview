@@ -4,6 +4,7 @@ import type { PreviewComment } from "./comments";
 export type CommentListProps = {
   comments: PreviewComment[];
   onDeleteComment: (id: string) => Promise<void>;
+  onReplyComment: (id: string, body: string) => Promise<void>;
   onReopenComment: (id: string) => Promise<void>;
   onResolveComment: (id: string) => Promise<void>;
   onUpdateComment: (id: string, body: string) => Promise<void>;
@@ -26,6 +27,7 @@ type CommentSectionProps =
   & Pick<
     CommentListProps,
     | "onDeleteComment"
+    | "onReplyComment"
     | "onReopenComment"
     | "onResolveComment"
     | "onUpdateComment"
@@ -35,6 +37,7 @@ const CommentSection = ({
   comments,
   emptyText,
   onDeleteComment,
+  onReplyComment,
   onReopenComment,
   onResolveComment,
   onUpdateComment,
@@ -53,6 +56,7 @@ const CommentSection = ({
               key={comment.id}
               lineLabel={formatLineLabel(comment)}
               onDeleteComment={onDeleteComment}
+              onReplyComment={onReplyComment}
               onReopenComment={onReopenComment}
               onResolveComment={onResolveComment}
               onUpdateComment={onUpdateComment}
@@ -68,6 +72,7 @@ const CommentSection = ({
 export const CommentList = ({
   comments,
   onDeleteComment,
+  onReplyComment,
   onReopenComment,
   onResolveComment,
   onUpdateComment,
@@ -86,6 +91,7 @@ export const CommentList = ({
         comments={activeComments}
         emptyText="No active comments."
         onDeleteComment={onDeleteComment}
+        onReplyComment={onReplyComment}
         onReopenComment={onReopenComment}
         onResolveComment={onResolveComment}
         onUpdateComment={onUpdateComment}
@@ -95,6 +101,7 @@ export const CommentList = ({
         comments={staleComments}
         emptyText="No stale comments."
         onDeleteComment={onDeleteComment}
+        onReplyComment={onReplyComment}
         onReopenComment={onReopenComment}
         onResolveComment={onResolveComment}
         onUpdateComment={onUpdateComment}
@@ -104,6 +111,7 @@ export const CommentList = ({
         comments={resolvedComments}
         emptyText="No resolved comments."
         onDeleteComment={onDeleteComment}
+        onReplyComment={onReplyComment}
         onReopenComment={onReopenComment}
         onResolveComment={onResolveComment}
         onUpdateComment={onUpdateComment}

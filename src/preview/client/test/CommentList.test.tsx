@@ -46,6 +46,7 @@ describe("CommentList", () => {
           }),
         ]}
         onDeleteComment={async () => {}}
+        onReplyComment={async () => {}}
         onReopenComment={async () => {}}
         onResolveComment={async () => {}}
         onUpdateComment={async () => {}}
@@ -72,12 +73,14 @@ describe("CommentList", () => {
   it("updates and deletes comments", async () => {
     const onDeleteComment = vi.fn(async () => {});
     const onReopenComment = vi.fn(async () => {});
+    const onReplyComment = vi.fn(async () => {});
     const onResolveComment = vi.fn(async () => {});
     const onUpdateComment = vi.fn(async () => {});
     render(
       <CommentList
         comments={[createComment({ body: "Original body." })]}
         onDeleteComment={onDeleteComment}
+        onReplyComment={onReplyComment}
         onReopenComment={onReopenComment}
         onResolveComment={onResolveComment}
         onUpdateComment={onUpdateComment}
@@ -102,6 +105,38 @@ describe("CommentList", () => {
     );
   });
 
+  it("shows and creates replies", async () => {
+    const onReplyComment = vi.fn(async () => {});
+    render(
+      <CommentList
+        comments={[createComment({
+          replies: [{
+            body: "Existing reply.",
+            createdAt: "2026-06-05T01:00:00.000Z",
+            id: "reply-1",
+            updatedAt: "2026-06-05T01:00:00.000Z",
+          }],
+        })]}
+        onDeleteComment={async () => {}}
+        onReplyComment={onReplyComment}
+        onReopenComment={async () => {}}
+        onResolveComment={async () => {}}
+        onUpdateComment={async () => {}}
+      />,
+    );
+
+    expect(screen.getByText("Existing reply.")).not.toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Reply" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Reply body" }), {
+      target: { value: "New reply." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Add reply" }));
+
+    await waitFor(() =>
+      expect(onReplyComment).toHaveBeenCalledWith("comment-1", "New reply.")
+    );
+  });
+
   it("resolves and reopens comments", async () => {
     const onReopenComment = vi.fn(async () => {});
     const onResolveComment = vi.fn(async () => {});
@@ -112,6 +147,7 @@ describe("CommentList", () => {
           createComment({ id: "resolved", resolved: true }),
         ]}
         onDeleteComment={async () => {}}
+        onReplyComment={async () => {}}
         onReopenComment={onReopenComment}
         onResolveComment={onResolveComment}
         onUpdateComment={async () => {}}

@@ -22,6 +22,7 @@ export type MarkdownPreviewProps = {
   markdown: string;
   onCreateComment: (line: number, body: string) => Promise<void>;
   onDeleteComment: (id: string) => Promise<void>;
+  onReplyComment: (id: string, body: string) => Promise<void>;
   onResolveComment: (id: string) => Promise<void>;
   onUpdateComment: (id: string, body: string) => Promise<void>;
 };
@@ -47,6 +48,7 @@ type CommentableBlockProps = {
   line: number;
   onCreateComment: (line: number, body: string) => Promise<void>;
   onDeleteComment: (id: string) => Promise<void>;
+  onReplyComment: (id: string, body: string) => Promise<void>;
   onResolveComment: (id: string) => Promise<void>;
   onUpdateComment: (id: string, body: string) => Promise<void>;
 };
@@ -62,6 +64,7 @@ const CommentableBlock = ({
   line,
   onCreateComment,
   onDeleteComment,
+  onReplyComment,
   onResolveComment,
   onUpdateComment,
 }: CommentableBlockProps) => {
@@ -116,6 +119,7 @@ const CommentableBlock = ({
               key={comment.id}
               lineLabel={`Line ${line}`}
               onDeleteComment={onDeleteComment}
+              onReplyComment={onReplyComment}
               onResolveComment={onResolveComment}
               onUpdateComment={onUpdateComment}
             />
@@ -183,6 +187,7 @@ const createCommentableComponent = (
     MarkdownPreviewProps,
     | "onCreateComment"
     | "onDeleteComment"
+    | "onReplyComment"
     | "onResolveComment"
     | "onUpdateComment"
   >,
@@ -200,6 +205,7 @@ const createCommentableComponent = (
         line={line}
         onCreateComment={props.onCreateComment}
         onDeleteComment={props.onDeleteComment}
+        onReplyComment={props.onReplyComment}
         onResolveComment={props.onResolveComment}
         onUpdateComment={props.onUpdateComment}
       >
@@ -215,6 +221,7 @@ const createCommentableListItem = (
     MarkdownPreviewProps,
     | "onCreateComment"
     | "onDeleteComment"
+    | "onReplyComment"
     | "onResolveComment"
     | "onUpdateComment"
   >,
@@ -235,6 +242,7 @@ const createCommentableListItem = (
           line={line}
           onCreateComment={props.onCreateComment}
           onDeleteComment={props.onDeleteComment}
+          onReplyComment={props.onReplyComment}
           onResolveComment={props.onResolveComment}
           onUpdateComment={props.onUpdateComment}
         >
@@ -251,6 +259,7 @@ const createCommentablePre = (
     MarkdownPreviewProps,
     | "onCreateComment"
     | "onDeleteComment"
+    | "onReplyComment"
     | "onResolveComment"
     | "onUpdateComment"
   >,
@@ -271,6 +280,7 @@ const createCommentablePre = (
         line={line}
         onCreateComment={props.onCreateComment}
         onDeleteComment={props.onDeleteComment}
+        onReplyComment={props.onReplyComment}
         onResolveComment={props.onResolveComment}
         onUpdateComment={props.onUpdateComment}
       >
@@ -285,6 +295,7 @@ export const MarkdownPreview = ({
   markdown,
   onCreateComment,
   onDeleteComment,
+  onReplyComment,
   onResolveComment,
   onUpdateComment,
 }: MarkdownPreviewProps) => {
@@ -303,6 +314,7 @@ export const MarkdownPreview = ({
     const commentCallbacks = {
       onCreateComment,
       onDeleteComment,
+      onReplyComment,
       onResolveComment,
       onUpdateComment,
     };
@@ -333,6 +345,7 @@ export const MarkdownPreview = ({
     commentsByLine,
     onCreateComment,
     onDeleteComment,
+    onReplyComment,
     onResolveComment,
     onUpdateComment,
   ]);

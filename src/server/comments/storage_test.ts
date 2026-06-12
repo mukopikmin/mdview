@@ -84,6 +84,7 @@ Deno.test("filters invalid stored comments and normalizes legacy resolution", as
       assertEquals(document.filePath, filePath);
       assertEquals(document.comments.length, 1);
       assertEquals(document.comments[0].id, "comment-1");
+      assertEquals(document.comments[0].replies, []);
       assertEquals(document.comments[0].resolved, false);
     } finally {
       await removeTempMarkdown(filePath);

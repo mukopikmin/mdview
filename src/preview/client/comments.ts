@@ -1,9 +1,17 @@
+export type PreviewCommentReply = {
+  body: string;
+  createdAt: string;
+  id: string;
+  updatedAt: string;
+};
+
 export type PreviewComment = {
   body: string;
   createdAt: string;
   id: string;
   line: number;
   originalLine: number;
+  replies?: PreviewCommentReply[];
   resolved: boolean;
   resolvedAt?: string;
   sourceHash?: string;
@@ -36,6 +44,24 @@ export const createComment = async (
   });
   if (!response.ok) {
     throw new Error(`Failed to create comment: ${response.status}`);
+  }
+  return await response.json() as PreviewComment;
+};
+
+export const createReply = async (
+  commentId: string,
+  body: string,
+): Promise<PreviewComment> => {
+  const response = await fetch(
+    `/__mdview/comments/${encodeURIComponent(commentId)}/replies`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ body }),
+    },
+  );
+  if (!response.ok) {
+    throw new Error(`Failed to create reply: ${response.status}`);
   }
   return await response.json() as PreviewComment;
 };

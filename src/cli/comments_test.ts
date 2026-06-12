@@ -7,6 +7,7 @@ import {
   listCommentFiles,
   type ListedCommentFile,
   removeCommentFile,
+  replyToComment,
   resolveComments,
   shouldRemoveCommentFile,
 } from "./comments.ts";
@@ -204,6 +205,56 @@ Deno.test("resolves selected comments atomically", async () => {
       assertEquals(
         (await inspectComments(filePath)).comments.map((comment) => comment.id),
         ["comment-1"],
+      );
+    } finally {
+      await removeTempMarkdown(filePath);
+    }
+  });
+});
+
+Deno.test("adds replies to comments", async () => {
+  await withTempCommentsDirectory(async () => {
+    const filePath = await createTempMarkdown();
+    try {
+      await writeCommentsDocument(filePath, {
+        comments: [{
+          body: "Question",
+          createdAt: "2026-06-08T13:00:00.000Z",
+          id: "comment-1",
+          line: 3,
+          originalLine: 3,
+          resolved: false,
+          stale: false,
+          updatedAt: "2026-06-08T13:00:00.000Z",
+        }],
+        filePath,
+      });
+
+      const updated = await replyToComment(
+        filePath,
+        "comment-1",
+        "  More context.  ",
+      );
+
+      assertEquals(updated.replies?.length, 1);
+      assertEquals(updated.replies?.[0].body, "More context.");
+      assertEquals(
+        updated.replies?.[0].createdAt,
+        updated.replies?.[0].updatedAt,
+      );
+      assertEquals(
+        (await inspectComments(filePath)).comments[0].replies?.[0].body,
+        "More context.",
+      );
+      await assertRejects(
+        () => replyToComment(filePath, "missing", "Reply"),
+        Error,
+        "Comment not found: missing",
+      );
+      await assertRejects(
+        () => replyToComment(filePath, "comment-1", " "),
+        Error,
+        "Reply body is required.",
       );
     } finally {
       await removeTempMarkdown(filePath);

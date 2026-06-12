@@ -4,8 +4,15 @@ import {
   readCommentsDocument,
   writeCommentsDocument,
 } from "../server/comments/storage.ts";
-import { readResolvedCommentsDocument } from "../server/comments/position.ts";
-import type { PreviewCommentsDocument } from "../server/comments/types.ts";
+import {
+  readResolvedCommentsDocument,
+  resolveCommentPosition,
+} from "../server/comments/position.ts";
+import type {
+  PreviewComment,
+  PreviewCommentReply,
+  PreviewCommentsDocument,
+} from "../server/comments/types.ts";
 
 type StoredComment = {
   resolved?: boolean;
@@ -184,6 +191,49 @@ export const resolveComments = async (
     ),
     filePath: resolvedFilePath,
   };
+};
+
+export const replyToComment = async (
+  filePath: string,
+  commentId: string,
+  body: string,
+): Promise<PreviewComment> => {
+  const replyBody = body.trim();
+  if (replyBody === "") {
+    throw new Error("Reply body is required.");
+  }
+
+  const resolvedFilePath = resolve(filePath);
+  const document = await readCommentsDocument(resolvedFilePath);
+  const index = document.comments.findIndex((comment) =>
+    comment.id === commentId
+  );
+  if (index < 0) {
+    throw new Error(`Comment not found: ${commentId}`);
+  }
+
+  const now = new Date().toISOString();
+  const reply: PreviewCommentReply = {
+    body: replyBody,
+    createdAt: now,
+    id: crypto.randomUUID(),
+    updatedAt: now,
+  };
+  const updatedComment = {
+    ...document.comments[index],
+    replies: [...(document.comments[index].replies ?? []), reply],
+    updatedAt: now,
+  };
+  const comments = [...document.comments];
+  comments[index] = updatedComment;
+  await writeCommentsDocument(resolvedFilePath, {
+    comments,
+    filePath: resolvedFilePath,
+  });
+  return resolveCommentPosition(
+    updatedComment,
+    await Deno.readTextFile(resolvedFilePath),
+  );
 };
 
 export const removeCommentFile = async (

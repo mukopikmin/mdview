@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   createComment,
+  createReply,
   deleteComment,
   loadComments,
   type PreviewComment,
@@ -96,6 +97,22 @@ export const App = () => {
     body: string,
   ): Promise<void> => {
     const comment = await updateComment(id, body);
+    setState((current) => {
+      if (current.status !== "loaded") return current;
+      return {
+        ...current,
+        comments: current.comments.map((existing) =>
+          existing.id === comment.id ? comment : existing
+        ),
+      };
+    });
+  };
+
+  const handleReplyComment = async (
+    id: string,
+    body: string,
+  ): Promise<void> => {
+    const comment = await createReply(id, body);
     setState((current) => {
       if (current.status !== "loaded") return current;
       return {
@@ -208,6 +225,7 @@ export const App = () => {
               markdown={state.document.markdown}
               onCreateComment={handleCreateComment}
               onDeleteComment={handleDeleteComment}
+              onReplyComment={handleReplyComment}
               onResolveComment={handleResolveComment}
               onUpdateComment={handleUpdateComment}
             />
@@ -216,6 +234,7 @@ export const App = () => {
             <CommentList
               comments={state.comments}
               onDeleteComment={handleDeleteComment}
+              onReplyComment={handleReplyComment}
               onReopenComment={handleReopenComment}
               onResolveComment={handleResolveComment}
               onUpdateComment={handleUpdateComment}

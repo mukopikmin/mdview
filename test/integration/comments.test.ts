@@ -36,6 +36,7 @@ Deno.test("stores preview comments in the configured comments directory", async 
       assertEquals(createdComment.line, 3);
       assertEquals(createdComment.body, "Clarify this.");
       assertEquals(createdComment.originalLine, 3);
+      assertEquals(createdComment.replies, []);
       assertEquals(createdComment.resolved, false);
       assertEquals(createdComment.resolvedAt, undefined);
       assertEquals(createdComment.sourceText, "Body");
@@ -68,6 +69,51 @@ Deno.test("stores preview comments in the configured comments directory", async 
       const storedText = await Deno.readTextFile(getCommentsFilePath(filePath));
       const storedDocument = JSON.parse(storedText);
       assertEquals(storedDocument.comments, []);
+    } finally {
+      await Deno.remove(filePath).catch(() => {});
+      await Deno.remove(getCommentsFilePath(filePath)).catch(() => {});
+    }
+  });
+});
+
+Deno.test("stores replies on preview comments", async () => {
+  await withTempCommentsDirectory(async () => {
+    const filePath = await Deno.makeTempFile({
+      prefix: "mdview-",
+      suffix: ".md",
+    });
+    await Deno.writeTextFile(filePath, "# Title\n\nBody\n");
+    try {
+      const handler = createPreviewHandler(filePath);
+      const createResponse = await handler(
+        new Request("http://127.0.0.1:3334/__mdview/comments", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ line: 3, body: "Question" }),
+        }),
+        {} as Deno.ServeHandlerInfo<Deno.NetAddr>,
+      );
+      const createdComment = await createResponse.json();
+      const replyResponse = await handler(
+        new Request(
+          `http://127.0.0.1:3334/__mdview/comments/${createdComment.id}/replies`,
+          {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ body: "Answer" }),
+          },
+        ),
+        {} as Deno.ServeHandlerInfo<Deno.NetAddr>,
+      );
+      const updatedComment = await replyResponse.json();
+
+      assertEquals(replyResponse.status, 200);
+      assertEquals(updatedComment.replies[0].body, "Answer");
+
+      const storedDocument = JSON.parse(
+        await Deno.readTextFile(getCommentsFilePath(filePath)),
+      );
+      assertEquals(storedDocument.comments[0].replies[0].body, "Answer");
     } finally {
       await Deno.remove(filePath).catch(() => {});
       await Deno.remove(getCommentsFilePath(filePath)).catch(() => {});
