@@ -3,8 +3,8 @@
   "description": "Preview a Markdown file in a local browser-friendly server.",
   "private": true,
   "scripts": {
-    "build:client": "npm --prefix src/preview/client run build",
-    "postinstall": "npm install --prefix src/preview/client",
-    "test": "npm --prefix src/preview/client test"
+    "build:client": "npm --prefix src/preview run build",
+    "postinstall": "npm install --prefix src/preview",
+    "test": "npm --prefix src/preview test"
   }
 }

@@ -2,9 +2,9 @@ import { cp, mkdir } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const clientRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const sourceRoot = resolve(clientRoot, "node_modules", "mermaid", "dist");
-const destinationRoot = resolve(clientRoot, "..", "static");
+const previewRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+const sourceRoot = resolve(previewRoot, "node_modules", "mermaid", "dist");
+const destinationRoot = resolve(previewRoot, "dist");
 
 const requiredAssets = ["mermaid.esm.min.mjs", "chunks/mermaid.esm.min"];
 

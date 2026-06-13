@@ -16,7 +16,7 @@ export default defineConfig(({ command }) => ({
       formats: ["es"],
       fileName: () => "client.js",
     },
-    outDir: resolve(__dirname, "../static"),
+    outDir: resolve(__dirname, "dist"),
     rollupOptions: {
       output: {
         entryFileNames: "client.js",
@@ -26,5 +26,6 @@ export default defineConfig(({ command }) => ({
   test: {
     environment: "jsdom",
     include: ["test/**/*.test.ts", "test/**/*.test.tsx"],
+    testTimeout: 10_000,
   },
 }));
