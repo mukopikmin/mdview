@@ -44,6 +44,9 @@ Use a different port:
 mdview README.md --port 4000
 ```
 
+If the requested port is already in use, `mdview` increments it until an
+available port is found.
+
 Bind to a specific host and port:
 
 ```sh
@@ -69,11 +72,61 @@ automatically when the Markdown file changes.
 By default, the server stops after the browser tab is closed. Use `--keep-alive`
 when you want to leave the server running.
 
+Comments are stored outside the Markdown file's directory so they do not appear
+as repository changes. The default comments directory is:
+
+- macOS: `~/Library/Application Support/mdview/comments`
+- Linux: `$XDG_DATA_HOME/mdview/comments`, or `~/.local/share/mdview/comments`
+- Windows: `%APPDATA%\mdview\comments`
+
+Set `MDVIEW_COMMENTS_DIR` to choose a different comments directory.
+
+List stored comment files:
+
+```sh
+mdview comments list
+```
+
+Inspect unresolved comments for a Markdown file as JSON:
+
+```sh
+mdview comments inspect README.md
+```
+
+Reply to a comment without resolving it:
+
+```sh
+mdview comments reply README.md <comment-id> "Need more context."
+```
+
+Mark one or more comments as resolved:
+
+```sh
+mdview comments resolve README.md <comment-id>...
+```
+
+The list shows each stored comment file, the target Markdown path, comment
+count, unresolved comment count, and the latest `updatedAt` value from the
+stored comments.
+
+Remove a stored comment file by passing the `FILE` value from
+`mdview comments list`:
+
+```sh
+mdview comments rm README.md-1a2b3c4d.json
+```
+
+The remove command prompts before deleting. Pass `--force` to skip the prompt:
+
+```sh
+mdview comments rm README.md-1a2b3c4d.json --force
+```
+
 ## Options
 
 | Option              | Description                                                | Default                |
 | ------------------- | ---------------------------------------------------------- | ---------------------- |
-| `-p, --port <port>` | Port to bind. Must be between `1` and `65535`.             | `3334`                 |
+| `-p, --port <port>` | Starting port. Increments when in use.                     | `3334`                 |
 | `--host <host>`     | Hostname or IP address to bind.                            | `127.0.0.1`            |
 | `--no-open`         | Do not open the preview URL in your browser automatically. | Opens browser          |
 | `--keep-alive`      | Keep the server running after the browser tab is closed.   | Stops after tab closes |

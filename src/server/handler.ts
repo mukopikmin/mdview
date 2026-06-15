@@ -1,10 +1,10 @@
 import { basename, resolve } from "@std/path";
-import { handlePreviewAssetRequest } from "./assets.ts";
-import { handleCommentsRequest } from "./comments.ts";
-import { handlePreviewDocumentRequest } from "./document.ts";
-import { createHotReloadEventStream } from "./events.ts";
+import { handleCommentsRequest } from "./comments/handler.ts";
+import { handlePreviewAssetRequest } from "./preview/assets.ts";
+import { handlePreviewDocumentRequest } from "./preview/document.ts";
+import { createHotReloadEventStream } from "./preview/events.ts";
+import { renderSpaShell } from "./preview/shell.ts";
 import { textResponse } from "./responses.ts";
-import { renderSpaShell } from "./shell.ts";
 
 export type PreviewHandlerOptions = {
   onEventStreamClose?: () => void;

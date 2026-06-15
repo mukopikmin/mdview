@@ -3,7 +3,7 @@ dist/
 dist-test/
 mdview
 THIRD_PARTY_NOTICES.md
-src/preview/static/
+src/preview/dist/
 *.mdview-comments.json
 .codex/
 

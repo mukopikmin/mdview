@@ -1,8 +1,17 @@
-#!/usr/bin/env -S deno run --allow-read --allow-write --allow-net --allow-run --allow-env=BROWSER
+#!/usr/bin/env -S deno run --allow-read --allow-write --allow-net --allow-run --allow-env=BROWSER,HOME,XDG_DATA_HOME,APPDATA,MDVIEW_COMMENTS_DIR
 import { CliUsageError, parseArgs, usage, version } from "./cli/args.ts";
 import { openBrowser } from "./cli/browser.ts";
+import {
+  formatCommentFilesTable,
+  inspectComments,
+  listCommentFiles,
+  removeCommentFile,
+  replyToComment,
+  resolveComments,
+  shouldRemoveCommentFile,
+} from "./cli/comments.ts";
 import { logInfo } from "./log.ts";
-import { startPreviewServer } from "./server/preview.ts";
+import { startPreviewServer } from "./server/mod.ts";
 
 const main = async (): Promise<void> => {
   const options = parseArgs(Deno.args);
@@ -14,6 +23,76 @@ const main = async (): Promise<void> => {
 
   if (options.version) {
     console.log(`mdview ${version}`);
+    return;
+  }
+
+  if (options.command === "comments-list") {
+    const result = await listCommentFiles();
+    for (const warning of result.warnings) {
+      console.error(`Warning: ${warning}`);
+    }
+    console.log(formatCommentFilesTable(result.entries).trimEnd());
+    return;
+  }
+
+  if (options.command === "comments-inspect") {
+    if (!options.file) {
+      throw new CliUsageError("Missing Markdown file.");
+    }
+    console.log(JSON.stringify(await inspectComments(options.file), null, 2));
+    return;
+  }
+
+  if (options.command === "comments-resolve") {
+    if (!options.file) {
+      throw new CliUsageError("Missing Markdown file.");
+    }
+    console.log(
+      JSON.stringify(
+        await resolveComments(options.file, options.commentIds ?? []),
+        null,
+        2,
+      ),
+    );
+    return;
+  }
+
+  if (options.command === "comments-reply") {
+    if (!options.file) {
+      throw new CliUsageError("Missing Markdown file.");
+    }
+    if (!options.commentId) {
+      throw new CliUsageError("Missing comment ID.");
+    }
+    console.log(
+      JSON.stringify(
+        await replyToComment(
+          options.file,
+          options.commentId,
+          options.replyBody ?? "",
+        ),
+        null,
+        2,
+      ),
+    );
+    return;
+  }
+
+  if (options.command === "comments-rm") {
+    if (!options.commentFile) {
+      throw new CliUsageError("Missing comment file.");
+    }
+
+    if (!options.force) {
+      const answer = prompt(`Remove ${options.commentFile}? [y/N]`);
+      if (!shouldRemoveCommentFile(answer ?? "")) {
+        console.log("Not removed.");
+        return;
+      }
+    }
+
+    await removeCommentFile(options.commentFile);
+    console.log(`Removed ${options.commentFile}`);
     return;
   }
 

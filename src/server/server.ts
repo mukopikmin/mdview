@@ -86,6 +86,37 @@ export const logPreviewClosed = (filePath: string): void => {
   logInfo(`Stopping preview server after browser tab closed: ${filePath}`);
 };
 
+const serveOnAvailablePort = (
+  options: Pick<PreviewServerOptions, "host" | "port">,
+  handler: Deno.ServeHandler<Deno.NetAddr>,
+): Deno.HttpServer<Deno.NetAddr> => {
+  let port = options.port;
+
+  while (true) {
+    try {
+      return Deno.serve(
+        {
+          hostname: options.host,
+          port,
+          onListen: () => {
+            // The CLI prints the canonical URL after startPreviewServer resolves.
+          },
+        },
+        handler,
+      );
+    } catch (error) {
+      if (
+        !(error instanceof Deno.errors.AddrInUse) ||
+        port === 0 ||
+        port === 65535
+      ) {
+        throw error;
+      }
+      port += 1;
+    }
+  }
+};
+
 export const startPreviewServer = async (
   options: PreviewServerOptions,
 ): Promise<StartedPreviewServer> => {
@@ -102,14 +133,8 @@ export const startPreviewServer = async (
     shutdown: () => server.shutdown(),
   });
 
-  server = Deno.serve(
-    {
-      hostname: options.host,
-      port: options.port,
-      onListen: () => {
-        // The CLI prints the canonical URL after startPreviewServer resolves.
-      },
-    },
+  server = serveOnAvailablePort(
+    options,
     createPreviewHandler(filePath, shutdownScheduler),
   );
 

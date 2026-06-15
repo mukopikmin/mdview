@@ -66,6 +66,49 @@ Deno.test("starts on an ephemeral port and serves the preview document", async (
   }
 });
 
+Deno.test("increments the port when the requested port is in use", async () => {
+  const filePath = await createTempMarkdown("# Port fallback test\n");
+  let occupiedPort: number;
+  let occupiedListener: Deno.TcpListener;
+
+  while (true) {
+    occupiedListener = Deno.listen({ hostname: "127.0.0.1", port: 0 });
+    occupiedPort = occupiedListener.addr.port;
+    if (occupiedPort < 65535) {
+      try {
+        const nextPort = Deno.listen({
+          hostname: "127.0.0.1",
+          port: occupiedPort + 1,
+        });
+        nextPort.close();
+        break;
+      } catch (error) {
+        occupiedListener.close();
+        if (error instanceof Deno.errors.AddrInUse) continue;
+        throw error;
+      }
+    }
+    occupiedListener.close();
+  }
+
+  let preview: StartedPreviewServer | undefined;
+  try {
+    preview = await startPreviewServer({
+      file: filePath,
+      host: "127.0.0.1",
+      keepAlive: true,
+      port: occupiedPort,
+    });
+
+    assertEquals(preview.server.addr.port, occupiedPort + 1);
+    assertEquals(preview.url, `http://127.0.0.1:${occupiedPort + 1}/`);
+  } finally {
+    occupiedListener.close();
+    if (preview) await stopServer(preview);
+    await removeTempMarkdown(filePath);
+  }
+});
+
 Deno.test("shuts down only after the last event stream closes", async () => {
   let shutdowns = 0;
   const scheduler = createPreviewShutdownScheduler({
