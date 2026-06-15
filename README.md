@@ -7,13 +7,15 @@ HTML, prints the preview URL, and opens that URL in your default browser.
 
 ## Install
 
-On macOS, you can build in a temporary directory and install the binary to
-`$HOME/.local/bin/mdview`:
+On Linux and macOS, you can build in a temporary directory and install the
+binary to `$HOME/.local/bin/mdview`:
 
 ```sh
 npm install
-deno task install:mac --version 0.1.0
+deno task install --version 0.1.0
 ```
+
+Make sure `$HOME/.local/bin` is included in your `PATH`.
 
 Or compile a standalone binary in the project directory:
 
@@ -171,11 +173,11 @@ deno task compile
 ./mdview README.md
 ```
 
-On macOS, build in a temporary directory and install the binary to
+On Linux and macOS, build in a temporary directory and install the binary to
 `$HOME/.local/bin/mdview`:
 
 ```sh
-deno task install:mac
+deno task install
 ```
 
 ## Release Archives
