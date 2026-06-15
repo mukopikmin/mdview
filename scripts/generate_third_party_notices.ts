@@ -96,8 +96,8 @@ const noticeKey = (notice: Notice): string =>
   `${notice.name}@${notice.version}:${notice.source}`;
 
 const collectNpmNotices = async (
-  lockPath = "src/preview/client/package-lock.json",
-  nodeModulesDir = "src/preview/client/node_modules",
+  lockPath = "src/preview/package-lock.json",
+  nodeModulesDir = "src/preview/node_modules",
 ): Promise<Notice[]> => {
   const lock: PackageLock = JSON.parse(await readText(lockPath));
   const packages = lock.packages ?? {};

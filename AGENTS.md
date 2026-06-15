@@ -10,9 +10,9 @@ them when making changes.
 - Prefer the stable project entry points defined in `deno.json` and
   `package.json` instead of duplicating their underlying commands.
 - Use `npm install` to install dependencies. The root `postinstall` installs the
-  preview client's dependencies under `src/preview/client/`.
+  preview client's dependencies under `src/preview/`.
 - Keep `deno.lock`, the root `package-lock.json`, and
-  `src/preview/client/package-lock.json` consistent with dependency changes.
+  `src/preview/package-lock.json` consistent with dependency changes.
 - Add or update focused tests for behavior changes. Do not rely only on a
   successful build.
 
@@ -23,7 +23,7 @@ them when making changes.
 - Keep preview document, asset, shell, and event-stream handling in
   `src/server/preview/`.
 - Keep comment persistence and request handling in `src/server/comments/`.
-- Keep browser-side React code in `src/preview/client/`.
+- Keep browser-side React code in `src/preview/`.
 - Keep release, installation, and notice-generation logic in `scripts/`.
 - Preserve the boundary between the Deno server and the browser client. Pass
   data through the existing HTTP endpoints instead of importing server modules
@@ -45,21 +45,21 @@ them when making changes.
 
 ## 4. Preview Client and Generated Assets
 
-- Follow the existing React and TypeScript patterns in `src/preview/client/`.
+- Follow the existing React and TypeScript patterns in `src/preview/`.
 - Keep Markdown feature support aligned with the table in `README.md`. Update
   the table and tests when support changes.
-- `src/preview/static/`, `dist/`, `mdview`, and `THIRD_PARTY_NOTICES.md` are
+- `src/preview/dist/`, root `dist/`, `mdview`, and `THIRD_PARTY_NOTICES.md` are
   generated outputs and MUST NOT be committed.
 - Build client assets with `npm run build:client`; do not edit generated files
-  under `src/preview/static/`.
+  under `src/preview/dist/`.
 - Keep Mermaid rendering functional without CDN or other network access.
 
 ## 5. Testing Conventions
 
 - Co-locate Deno unit tests with their implementation using `*_test.ts`.
 - Put cross-module server workflows in `test/integration/`.
-- Put preview client tests in `src/preview/client/test/` using Vitest and
-  Testing Library.
+- Put preview client tests in `src/preview/test/` using Vitest and Testing
+  Library.
 - Prefer behavioral tests through public functions, HTTP requests, or rendered
   UI. Avoid tests coupled to private implementation details.
 - Use temporary files and ephemeral or explicitly reserved loopback ports. Tests
