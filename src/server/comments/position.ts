@@ -41,23 +41,6 @@ export const resolveCommentPosition = (
     getLineText(markdown, comment.line) ??
     "";
   const sourceHash = comment.sourceHash ?? hashSourceText(sourceText);
-  const currentRangeText = getLineRangeText(markdown, comment.line, endLine);
-
-  if (
-    currentRangeText !== undefined &&
-    currentRangeText === sourceText &&
-    hashSourceText(currentRangeText) === sourceHash
-  ) {
-    return {
-      ...comment,
-      endLine,
-      originalLine: comment.line,
-      originalEndLine: endLine,
-      sourceHash,
-      sourceText,
-      stale: false,
-    };
-  }
 
   const lines = getMarkdownLines(markdown);
   const startLine = Math.max(1, comment.line - lineSearchRadius);

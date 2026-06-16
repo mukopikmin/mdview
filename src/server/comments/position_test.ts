@@ -62,7 +62,7 @@ Deno.test("tracks a uniquely matching source line within forty lines", () => {
   const before = Array.from({ length: 40 }, (_, index) => `before ${index}`);
   const markdown = [...before, "Body", "after"].join("\n");
   const resolved = resolveCommentPosition(
-    createComment({ line: 1, originalLine: 1 }),
+    createComment({ line: 1, endLine: 1, originalLine: 1, originalEndLine: 1 }),
     markdown,
   );
 
@@ -75,7 +75,7 @@ Deno.test("does not track a matching source line outside the search radius", () 
   const before = Array.from({ length: 41 }, (_, index) => `before ${index}`);
   const markdown = [...before, "Body"].join("\n");
   const resolved = resolveCommentPosition(
-    createComment({ line: 1, originalLine: 1 }),
+    createComment({ line: 1, endLine: 1, originalLine: 1, originalEndLine: 1 }),
     markdown,
   );
 
