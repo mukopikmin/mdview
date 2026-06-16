@@ -36,6 +36,7 @@ export const resolveCommentPosition = (
   ) {
     return {
       ...comment,
+      displayLine: comment.line,
       originalLine: comment.line,
       sourceHash,
       sourceText,
@@ -58,6 +59,7 @@ export const resolveCommentPosition = (
   if (matchingLines.length === 1) {
     return {
       ...comment,
+      displayLine: matchingLines[0],
       line: matchingLines[0],
       originalLine: comment.line,
       sourceHash,
@@ -68,6 +70,7 @@ export const resolveCommentPosition = (
 
   return {
     ...comment,
+    displayLine: comment.line,
     originalLine: comment.line,
     sourceHash,
     sourceText,
