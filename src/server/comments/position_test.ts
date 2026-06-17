@@ -43,6 +43,7 @@ Deno.test("keeps a comment at an unchanged source line", () => {
     "# Title\n\nBody\n",
   );
 
+  assertEquals(resolved.displayLine, 3);
   assertEquals(resolved.line, 3);
   assertEquals(resolved.originalLine, 3);
   assertEquals(resolved.stale, false);
@@ -56,6 +57,7 @@ Deno.test("tracks a uniquely matching source line within forty lines", () => {
     markdown,
   );
 
+  assertEquals(resolved.displayLine, 41);
   assertEquals(resolved.line, 41);
   assertEquals(resolved.originalLine, 1);
   assertEquals(resolved.stale, false);
@@ -69,6 +71,7 @@ Deno.test("does not track a matching source line outside the search radius", () 
     markdown,
   );
 
+  assertEquals(resolved.displayLine, 1);
   assertEquals(resolved.line, 1);
   assertEquals(resolved.originalLine, 1);
   assertEquals(resolved.stale, true);
@@ -80,6 +83,7 @@ Deno.test("marks a comment stale when its source is ambiguous", () => {
     "# Title\nBody\nchanged\nBody\n",
   );
 
+  assertEquals(resolved.displayLine, 3);
   assertEquals(resolved.line, 3);
   assertEquals(resolved.originalLine, 3);
   assertEquals(resolved.stale, true);
@@ -91,6 +95,7 @@ Deno.test("fills source metadata for legacy comments", () => {
     "# Title\n\nBody\n",
   );
 
+  assertEquals(resolved.displayLine, 3);
   assertEquals(resolved.sourceText, "Body");
   assertEquals(resolved.sourceHash, hashSourceText("Body"));
   assertEquals(resolved.stale, false);

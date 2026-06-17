@@ -66,6 +66,42 @@ export const createReply = async (
   return await response.json() as PreviewComment;
 };
 
+export const updateReply = async (
+  commentId: string,
+  replyId: string,
+  body: string,
+): Promise<PreviewComment> => {
+  const response = await fetch(
+    `/__mdview/comments/${encodeURIComponent(commentId)}/replies/${
+      encodeURIComponent(replyId)
+    }`,
+    {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ body }),
+    },
+  );
+  if (!response.ok) {
+    throw new Error(`Failed to update reply: ${response.status}`);
+  }
+  return await response.json() as PreviewComment;
+};
+
+export const deleteReply = async (
+  commentId: string,
+  replyId: string,
+): Promise<void> => {
+  const response = await fetch(
+    `/__mdview/comments/${encodeURIComponent(commentId)}/replies/${
+      encodeURIComponent(replyId)
+    }`,
+    { method: "DELETE" },
+  );
+  if (!response.ok) {
+    throw new Error(`Failed to delete reply: ${response.status}`);
+  }
+};
+
 export const updateComment = async (
   id: string,
   body: string,

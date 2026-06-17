@@ -8,6 +8,7 @@ export type PreviewCommentReply = {
 export type PreviewComment = {
   body: string;
   createdAt: string;
+  displayLine?: number;
   id: string;
   line: number;
   originalLine: number;

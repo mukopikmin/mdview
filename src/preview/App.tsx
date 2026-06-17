@@ -3,11 +3,13 @@ import {
   createComment,
   createReply,
   deleteComment,
+  deleteReply,
   loadComments,
   type PreviewComment,
   reopenComment,
   resolveComment,
   updateComment,
+  updateReply,
 } from "./comments";
 import { CommentList } from "./CommentList";
 import { connectHotReload } from "./hot_reload";
@@ -135,6 +137,46 @@ export const App = () => {
     });
   };
 
+  const handleUpdateReply = async (
+    commentId: string,
+    replyId: string,
+    body: string,
+  ): Promise<void> => {
+    const comment = await updateReply(commentId, replyId, body);
+    setState((current) => {
+      if (current.status !== "loaded") return current;
+      return {
+        ...current,
+        comments: current.comments.map((existing) =>
+          existing.id === comment.id ? comment : existing
+        ),
+      };
+    });
+  };
+
+  const handleDeleteReply = async (
+    commentId: string,
+    replyId: string,
+  ): Promise<void> => {
+    await deleteReply(commentId, replyId);
+    setState((current) => {
+      if (current.status !== "loaded") return current;
+      return {
+        ...current,
+        comments: current.comments.map((comment) =>
+          comment.id === commentId
+            ? {
+              ...comment,
+              replies: (comment.replies ?? []).filter((reply) =>
+                reply.id !== replyId
+              ),
+            }
+            : comment
+        ),
+      };
+    });
+  };
+
   const handleResolveComment = async (id: string): Promise<void> => {
     const comment = await resolveComment(id);
     setState((current) => {
@@ -225,19 +267,23 @@ export const App = () => {
               markdown={state.document.markdown}
               onCreateComment={handleCreateComment}
               onDeleteComment={handleDeleteComment}
+              onDeleteReply={handleDeleteReply}
               onReplyComment={handleReplyComment}
               onResolveComment={handleResolveComment}
               onUpdateComment={handleUpdateComment}
+              onUpdateReply={handleUpdateReply}
             />
           )
           : (
             <CommentList
               comments={state.comments}
               onDeleteComment={handleDeleteComment}
+              onDeleteReply={handleDeleteReply}
               onReplyComment={handleReplyComment}
               onReopenComment={handleReopenComment}
               onResolveComment={handleResolveComment}
               onUpdateComment={handleUpdateComment}
+              onUpdateReply={handleUpdateReply}
             />
           )}
       </main>
