@@ -18,9 +18,11 @@ const renderMarkdown = (
       markdown={markdown}
       onCreateComment={async () => {}}
       onDeleteComment={async () => {}}
+      onDeleteReply={async () => {}}
       onReplyComment={async () => {}}
       onResolveComment={callbacks.onResolveComment ?? (async () => {})}
       onUpdateComment={async () => {}}
+      onUpdateReply={async () => {}}
     />,
   );
   return { ...result, container: result.container };

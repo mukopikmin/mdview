@@ -4,10 +4,16 @@ import type { PreviewComment } from "./comments";
 export type CommentListProps = {
   comments: PreviewComment[];
   onDeleteComment: (id: string) => Promise<void>;
+  onDeleteReply: (commentId: string, replyId: string) => Promise<void>;
   onReplyComment: (id: string, body: string) => Promise<void>;
   onReopenComment: (id: string) => Promise<void>;
   onResolveComment: (id: string) => Promise<void>;
   onUpdateComment: (id: string, body: string) => Promise<void>;
+  onUpdateReply: (
+    commentId: string,
+    replyId: string,
+    body: string,
+  ) => Promise<void>;
 };
 
 const formatLineLabel = (comment: PreviewComment): string => {
@@ -27,20 +33,24 @@ type CommentSectionProps =
   & Pick<
     CommentListProps,
     | "onDeleteComment"
+    | "onDeleteReply"
     | "onReplyComment"
     | "onReopenComment"
     | "onResolveComment"
     | "onUpdateComment"
+    | "onUpdateReply"
   >;
 
 const CommentSection = ({
   comments,
   emptyText,
   onDeleteComment,
+  onDeleteReply,
   onReplyComment,
   onReopenComment,
   onResolveComment,
   onUpdateComment,
+  onUpdateReply,
   title,
 }: CommentSectionProps) => (
   <section className="comment-list-section">
@@ -56,10 +66,12 @@ const CommentSection = ({
               key={comment.id}
               lineLabel={formatLineLabel(comment)}
               onDeleteComment={onDeleteComment}
+              onDeleteReply={onDeleteReply}
               onReplyComment={onReplyComment}
               onReopenComment={onReopenComment}
               onResolveComment={onResolveComment}
               onUpdateComment={onUpdateComment}
+              onUpdateReply={onUpdateReply}
               showSource
               showState
             />
@@ -72,10 +84,12 @@ const CommentSection = ({
 export const CommentList = ({
   comments,
   onDeleteComment,
+  onDeleteReply,
   onReplyComment,
   onReopenComment,
   onResolveComment,
   onUpdateComment,
+  onUpdateReply,
 }: CommentListProps) => {
   const activeComments = comments.filter((comment) =>
     !comment.resolved && !comment.stale
@@ -91,30 +105,36 @@ export const CommentList = ({
         comments={activeComments}
         emptyText="No active comments."
         onDeleteComment={onDeleteComment}
+        onDeleteReply={onDeleteReply}
         onReplyComment={onReplyComment}
         onReopenComment={onReopenComment}
         onResolveComment={onResolveComment}
         onUpdateComment={onUpdateComment}
+        onUpdateReply={onUpdateReply}
         title={`Active comments (${activeComments.length})`}
       />
       <CommentSection
         comments={staleComments}
         emptyText="No stale comments."
         onDeleteComment={onDeleteComment}
+        onDeleteReply={onDeleteReply}
         onReplyComment={onReplyComment}
         onReopenComment={onReopenComment}
         onResolveComment={onResolveComment}
         onUpdateComment={onUpdateComment}
+        onUpdateReply={onUpdateReply}
         title={`Stale comments (${staleComments.length})`}
       />
       <CommentSection
         comments={resolvedComments}
         emptyText="No resolved comments."
         onDeleteComment={onDeleteComment}
+        onDeleteReply={onDeleteReply}
         onReplyComment={onReplyComment}
         onReopenComment={onReopenComment}
         onResolveComment={onResolveComment}
         onUpdateComment={onUpdateComment}
+        onUpdateReply={onUpdateReply}
         title={`Resolved comments (${resolvedComments.length})`}
       />
     </div>

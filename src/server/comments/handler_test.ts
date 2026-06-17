@@ -139,6 +139,25 @@ testWithTempComments("adds replies to comments", async () => {
     assertEquals(updatedComment.replies.length, 1);
     assertEquals(updatedComment.replies[0].body, "More context.");
     assertMatch(updatedComment.replies[0].id, /^[0-9a-f-]{36}$/);
+    const replyId = updatedComment.replies[0].id;
+
+    const updateResponse = await requestComments(
+      handler,
+      `/__mdview/comments/${createdComment.id}/replies/${replyId}`,
+      {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ body: "  Updated context.  " }),
+      },
+    );
+    const commentWithUpdatedReply = await updateResponse.json();
+
+    assertEquals(updateResponse.status, 200);
+    assertEquals(
+      commentWithUpdatedReply.replies[0].body,
+      "Updated context.",
+    );
+    assertEquals(commentWithUpdatedReply.replies[0].id, replyId);
 
     const invalidResponse = await requestComments(
       handler,
@@ -151,6 +170,20 @@ testWithTempComments("adds replies to comments", async () => {
     );
     assertEquals(invalidResponse.status, 400);
     assertEquals(await invalidResponse.text(), "Comment body is required.");
+
+    const deleteResponse = await requestComments(
+      handler,
+      `/__mdview/comments/${createdComment.id}/replies/${replyId}`,
+      { method: "DELETE" },
+    );
+    assertEquals(deleteResponse.status, 204);
+
+    const storedResponse = await requestComments(
+      handler,
+      "/__mdview/comments",
+    );
+    const storedDocument = await storedResponse.json();
+    assertEquals(storedDocument.comments[0].replies, []);
   } finally {
     await removeTempMarkdown(filePath);
   }
@@ -168,6 +201,16 @@ testWithTempComments(
         ["POST", "/__mdview/comments/missing/resolve", "Comment not found."],
         ["POST", "/__mdview/comments/missing/reopen", "Comment not found."],
         ["POST", "/__mdview/comments/missing/replies", "Comment not found."],
+        [
+          "PUT",
+          "/__mdview/comments/missing/replies/reply-1",
+          "Comment not found.",
+        ],
+        [
+          "DELETE",
+          "/__mdview/comments/missing/replies/reply-1",
+          "Comment not found.",
+        ],
         ["POST", "/__mdview/comments/missing/unknown", "Not found."],
         ["GET", "/__mdview/comments/", "Comment not found."],
       ];

@@ -51,6 +51,9 @@ const createCommentResponse = (comment: PreviewComment): Response =>
 const createCommentNotFoundResponse = (): Response =>
   notFoundResponse("Comment not found.");
 
+const createReplyNotFoundResponse = (): Response =>
+  notFoundResponse("Reply not found.");
+
 const parseCommentRoute = (
   pathname: string,
   commentsPath: string,
@@ -133,6 +136,76 @@ const createReply = async (
   return createCommentResponse(
     resolveCommentPosition(updatedComment, await Deno.readTextFile(filePath)),
   );
+};
+
+const updateReply = async (
+  request: Request,
+  filePath: string,
+  commentId: string,
+  replyId: string,
+): Promise<Response> => {
+  const body = await parseJsonBody(request);
+  const replyBody = parseCommentBody(body);
+  const document = await readCommentsDocument(filePath);
+  const commentIndex = document.comments.findIndex((comment) =>
+    comment.id === commentId
+  );
+  if (commentIndex < 0) return createCommentNotFoundResponse();
+
+  const comment = document.comments[commentIndex];
+  const replies = comment.replies ?? [];
+  const replyIndex = replies.findIndex((reply) => reply.id === replyId);
+  if (replyIndex < 0) return createReplyNotFoundResponse();
+
+  const now = new Date().toISOString();
+  const updatedReplies = [...replies];
+  updatedReplies[replyIndex] = {
+    ...updatedReplies[replyIndex],
+    body: replyBody,
+    updatedAt: now,
+  };
+  const updatedComment = {
+    ...comment,
+    replies: updatedReplies,
+    updatedAt: now,
+  };
+  const comments = [...document.comments];
+  comments[commentIndex] = updatedComment;
+  await writeCommentsDocument(filePath, { comments, filePath });
+  return createCommentResponse(
+    resolveCommentPosition(updatedComment, await Deno.readTextFile(filePath)),
+  );
+};
+
+const deleteReply = async (
+  filePath: string,
+  commentId: string,
+  replyId: string,
+): Promise<Response> => {
+  const document = await readCommentsDocument(filePath);
+  const commentIndex = document.comments.findIndex((comment) =>
+    comment.id === commentId
+  );
+  if (commentIndex < 0) return createCommentNotFoundResponse();
+
+  const comment = document.comments[commentIndex];
+  const replies = comment.replies ?? [];
+  const updatedReplies = replies.filter((reply) => reply.id !== replyId);
+  if (updatedReplies.length === replies.length) {
+    return createReplyNotFoundResponse();
+  }
+
+  const comments = [...document.comments];
+  comments[commentIndex] = {
+    ...comment,
+    replies: updatedReplies,
+    updatedAt: new Date().toISOString(),
+  };
+  await writeCommentsDocument(filePath, { comments, filePath });
+  return new Response(null, {
+    status: 204,
+    headers: { "cache-control": "no-store" },
+  });
 };
 
 const setCommentResolution = async (
@@ -234,6 +307,18 @@ export const handleCommentsRequest = async (
 
   if (request.method === "POST" && route.action === "replies") {
     return await createReply(request, filePath, route.commentId);
+  }
+
+  if (route.action?.startsWith("replies/")) {
+    const replyId = route.action.slice("replies/".length);
+    if (replyId === "") return createReplyNotFoundResponse();
+    if (request.method === "PUT") {
+      return await updateReply(request, filePath, route.commentId, replyId);
+    }
+    if (request.method === "DELETE") {
+      return await deleteReply(filePath, route.commentId, replyId);
+    }
+    return methodNotAllowedResponse();
   }
 
   if (route.action !== undefined) return notFoundResponse();

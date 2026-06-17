@@ -578,10 +578,21 @@ export const previewThemeCss = `
       }
 
       .comment-reply-label {
-        margin-bottom: 3px;
         color: var(--color-text-muted);
         font-size: 0.75rem;
         font-weight: 600;
+      }
+
+      .comment-reply-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 3px;
+      }
+
+      .comment-reply-header .comment-actions {
+        margin-top: 0;
       }
 
       .comment-reply-form {
