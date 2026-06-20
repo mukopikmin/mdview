@@ -53,7 +53,7 @@ const version = parseVersion(Deno.args);
 const targetArgs = target ? ["--target", target] : [];
 const originalVersionSource = await Deno.readTextFile(versionPath);
 
-const command = new Deno.Command(Deno.execPath(), {
+const command = new Deno.Command("deno", {
   args: [
     "compile",
     "--node-modules-dir=none",
