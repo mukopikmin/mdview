@@ -31,10 +31,10 @@ const withConfigEnvironment = async (
   Deno.env.set("XDG_CONFIG_HOME", configHome);
 
   const defaultConfigFilePath = Deno.build.os === "darwin"
-    ? join(home, "Library", "Application Support", "mdview", "config.json")
+    ? join(home, "Library", "Application Support", "mdview", "config.toml")
     : Deno.build.os === "windows"
-    ? join(appData, "mdview", "config.json")
-    : join(configHome, "mdview", "config.json");
+    ? join(appData, "mdview", "config.toml")
+    : join(configHome, "mdview", "config.toml");
 
   try {
     await run({
@@ -73,7 +73,7 @@ Deno.test("reads comments directory from config", async () => {
     const commentsDirectory = join(root, "configured-comments");
     await writeConfig(
       configFilePath,
-      JSON.stringify({ commentsDirectory }),
+      `commentsDirectory = ${JSON.stringify(commentsDirectory)}\n`,
     );
 
     assertEquals(readConfig(), { commentsDirectory });
@@ -82,7 +82,7 @@ Deno.test("reads comments directory from config", async () => {
 
 Deno.test("reads config without comments directory", async () => {
   await withConfigEnvironment(async ({ configFilePath }) => {
-    await writeConfig(configFilePath, JSON.stringify({}));
+    await writeConfig(configFilePath, "");
 
     assertEquals(readConfig(), {});
   });
@@ -102,7 +102,7 @@ Deno.test("rejects invalid comments directory config type", async () => {
   await withConfigEnvironment(async ({ configFilePath }) => {
     await writeConfig(
       configFilePath,
-      JSON.stringify({ commentsDirectory: 42 }),
+      "commentsDirectory = 42\n",
     );
 
     assertThrows(

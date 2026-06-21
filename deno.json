@@ -11,6 +11,7 @@
   "imports": {
     "@std/assert": "jsr:@std/assert@1.0.19",
     "@std/cli/parse-args": "jsr:@std/cli@1.0.28/parse-args",
-    "@std/path": "jsr:@std/path@1.1.4"
+    "@std/path": "jsr:@std/path@1.1.4",
+    "@std/toml": "jsr:@std/toml@1.0.11"
   }
 }

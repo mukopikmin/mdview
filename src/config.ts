@@ -1,7 +1,8 @@
 import { join } from "@std/path";
+import { parse } from "@std/toml";
 
 const appDirectoryName = "mdview";
-const configFileName = "config.json";
+const configFileName = "config.toml";
 
 export type MdviewConfig = {
   commentsDirectory?: string;
@@ -72,7 +73,7 @@ export const readConfig = (): MdviewConfig | undefined => {
 
   let parsed: unknown;
   try {
-    parsed = JSON.parse(Deno.readTextFileSync(configFilePath));
+    parsed = parse(Deno.readTextFileSync(configFilePath));
   } catch (error) {
     if (
       error instanceof Deno.errors.NotFound ||

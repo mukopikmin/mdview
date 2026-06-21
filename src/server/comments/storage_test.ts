@@ -58,7 +58,7 @@ const writeMdviewConfig = async (commentsDirectory: string): Promise<void> => {
   await Deno.mkdir(dirname(configFilePath), { recursive: true });
   await Deno.writeTextFile(
     configFilePath,
-    JSON.stringify({ commentsDirectory }),
+    `commentsDirectory = ${JSON.stringify(commentsDirectory)}\n`,
   );
 };
 
