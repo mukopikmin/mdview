@@ -30,9 +30,7 @@ const withConfigEnvironment = async (
   Deno.env.set("HOME", home);
   Deno.env.set("XDG_CONFIG_HOME", configHome);
 
-  const defaultConfigFilePath = Deno.build.os === "darwin"
-    ? join(home, "Library", "Application Support", "mdview", "config.toml")
-    : Deno.build.os === "windows"
+  const defaultConfigFilePath = Deno.build.os === "windows"
     ? join(appData, "mdview", "config.toml")
     : join(configHome, "mdview", "config.toml");
 
@@ -66,6 +64,21 @@ Deno.test("resolves the mdview config file path", async () => {
   await withConfigEnvironment(async ({ defaultConfigFilePath }) => {
     assertEquals(getConfigFilePath(), defaultConfigFilePath);
   });
+});
+
+Deno.test({
+  name: "falls back to ~/.config when XDG_CONFIG_HOME is unset",
+  ignore: Deno.build.os === "windows",
+  fn: async () => {
+    await withConfigEnvironment(async ({ root }) => {
+      Deno.env.delete("XDG_CONFIG_HOME");
+
+      assertEquals(
+        getConfigFilePath(),
+        join(root, "home", ".config", "mdview", "config.toml"),
+      );
+    });
+  },
 });
 
 Deno.test("reads comments directory from config", async () => {

@@ -84,8 +84,7 @@ as repository changes. The default comments directory is:
 Set `commentsDirectory` in the mdview config file to choose a different comments
 directory:
 
-- macOS: `~/Library/Application Support/mdview/config.toml`
-- Linux: `$XDG_CONFIG_HOME/mdview/config.toml`, or
+- macOS and Linux: `$XDG_CONFIG_HOME/mdview/config.toml`, or
   `~/.config/mdview/config.toml`
 - Windows: `%APPDATA%\mdview\config.toml`
 

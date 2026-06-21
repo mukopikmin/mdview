@@ -22,19 +22,6 @@ const getEnv = (name: string): string | undefined => {
 };
 
 export const getConfigFilePath = (): string | undefined => {
-  if (Deno.build.os === "darwin") {
-    const home = getEnv("HOME");
-    if (home) {
-      return join(
-        home,
-        "Library",
-        "Application Support",
-        appDirectoryName,
-        configFileName,
-      );
-    }
-  }
-
   if (Deno.build.os === "windows") {
     const appData = getEnv("APPDATA");
     if (appData) return join(appData, appDirectoryName, configFileName);
