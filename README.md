@@ -93,8 +93,6 @@ directory:
 commentsDirectory = "/path/to/mdview/comments"
 ```
 
-`MDVIEW_COMMENTS_DIR` overrides the config file when both are set.
-
 List stored comment files:
 
 ```sh

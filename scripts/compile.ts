@@ -62,7 +62,7 @@ const command = new Deno.Command(Deno.execPath(), {
     "--allow-write",
     "--allow-net",
     "--allow-run",
-    "--allow-env=BROWSER,HOME,XDG_CONFIG_HOME,XDG_DATA_HOME,APPDATA,MDVIEW_COMMENTS_DIR",
+    "--allow-env=BROWSER,HOME,XDG_CONFIG_HOME,XDG_DATA_HOME,APPDATA",
     "--include",
     "src/preview/dist",
     ...targetArgs,

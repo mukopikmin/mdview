@@ -26,7 +26,7 @@ const getEnv = (name: string): string | undefined => {
   } catch (error) {
     if (error instanceof Deno.errors.PermissionDenied) {
       throw new Error(
-        `Cannot determine comments directory without environment access. Allow HOME, XDG_CONFIG_HOME, XDG_DATA_HOME, APPDATA, and MDVIEW_COMMENTS_DIR.`,
+        `Cannot determine comments directory without environment access. Allow HOME, XDG_CONFIG_HOME, XDG_DATA_HOME, and APPDATA.`,
       );
     }
     throw error;
@@ -34,9 +34,6 @@ const getEnv = (name: string): string | undefined => {
 };
 
 export const getCommentsDirectoryPath = (): string => {
-  const configuredDirectory = getEnv("MDVIEW_COMMENTS_DIR");
-  if (configuredDirectory) return configuredDirectory;
-
   const config = readConfig();
   if (config?.commentsDirectory) return config.commentsDirectory;
 
