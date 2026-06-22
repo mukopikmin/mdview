@@ -5,10 +5,10 @@ import {
   formatCommentFilesTable,
   inspectComments,
   listCommentFiles,
-  removeCommentFile,
+  removeComments,
+  removeCommentsIfConfirmed,
   replyToComment,
   resolveComments,
-  shouldRemoveCommentFile,
 } from "./cli/comments.ts";
 import { logInfo } from "./log.ts";
 import { startPreviewServer } from "./server/mod.ts";
@@ -79,20 +79,23 @@ const main = async (): Promise<void> => {
   }
 
   if (options.command === "comments-rm") {
-    if (!options.commentFile) {
-      throw new CliUsageError("Missing comment file.");
+    if (!options.file) {
+      throw new CliUsageError("Missing Markdown file.");
     }
 
-    if (!options.force) {
-      const answer = prompt(`Remove ${options.commentFile}? [y/N]`);
-      if (!shouldRemoveCommentFile(answer ?? "")) {
+    let filePath: string | undefined;
+    if (options.force) {
+      filePath = await removeComments(options.file);
+    } else {
+      const answer = prompt(`Remove comments for ${options.file}? [y/N]`);
+      filePath = await removeCommentsIfConfirmed(options.file, answer ?? "");
+      if (!filePath) {
         console.log("Not removed.");
         return;
       }
     }
 
-    await removeCommentFile(options.commentFile);
-    console.log(`Removed ${options.commentFile}`);
+    console.log(`Removed comments for ${filePath}`);
     return;
   }
 

@@ -10,7 +10,6 @@ export type CliOptions = {
     | "comments-rm";
   commentId?: string;
   commentIds?: string[];
-  commentFile?: string;
   file: string | undefined;
   force: boolean;
   host: string;
@@ -35,14 +34,14 @@ export const usage = `Usage:
   sadoku comments reply <file.md> <comment-id> <body>
   sadoku comments resolve <file.md> <comment-id>...
   sadoku comments list
-  sadoku comments rm <comment-file> [--force]
+  sadoku comments rm <file.md> [--force]
 
 Options:
   -p, --port   Starting port to bind. Defaults to 3334.
   --host       Host to bind. Defaults to 127.0.0.1.
   --no-open    Do not open the preview in your browser automatically.
   --keep-alive Keep the server running after the browser tab is closed.
-  --force      Remove comment files without prompting.
+  --force      Remove comments without prompting.
   -v, --version
                Show version.
   -h, --help   Show this help message.
@@ -114,8 +113,7 @@ export const parseArgs = (argv: string[]): CliOptions => {
 
       const options: CliOptions = {
         command: "comments-rm",
-        commentFile: flags._[2]?.toString(),
-        file: undefined,
+        file: flags._[2]?.toString(),
         force: Boolean(flags.force),
         host: "127.0.0.1",
         keepAlive: false,
