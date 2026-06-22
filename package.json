@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "build:client": "npm --prefix src/preview run build",
-    "postinstall": "npm install --prefix src/preview",
+    "install:deps": "npm ci --ignore-scripts && npm ci --prefix src/preview",
+    "postinstall": "npm ci --prefix src/preview",
     "test": "npm --prefix src/preview test"
   }
 }
