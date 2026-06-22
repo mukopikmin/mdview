@@ -2,9 +2,11 @@ node_modules/
 dist/
 dist-test/
 mdview
+sadoku
 THIRD_PARTY_NOTICES.md
 src/preview/dist/
 *.mdview-comments.json
+*.sadoku-comments.json
 .codex/
 
 npm-debug.log*

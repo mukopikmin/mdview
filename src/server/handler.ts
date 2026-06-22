@@ -37,15 +37,15 @@ async (request) => {
     const requestUrl = new URL(request.url);
     const { pathname } = requestUrl;
 
-    if (pathname === "/__mdview/events") {
+    if (pathname === "/__sadoku/events") {
       return handleHotReloadEventRequest(resolvedFilePath, request, options);
     }
 
-    if (pathname === "/__mdview/document") {
+    if (pathname === "/__sadoku/document") {
       return await handlePreviewDocumentRequest(resolvedFilePath);
     }
 
-    if (pathname.startsWith("/__mdview/comments")) {
+    if (pathname.startsWith("/__sadoku/comments")) {
       return await handleCommentsRequest(request, resolvedFilePath, pathname);
     }
 

@@ -25,7 +25,7 @@ Deno.test("converts handler failures to plain text server errors", async () => {
     try {
       const response = await requestHandler(
         createPreviewHandler(filePath),
-        "/__mdview/comments",
+        "/__sadoku/comments",
       );
 
       assertEquals(response.status, 500);
@@ -45,7 +45,7 @@ Deno.test("returns a server error when the Markdown document disappears", async 
   const handler = createPreviewHandler(filePath);
   await Deno.remove(filePath);
   try {
-    const response = await requestHandler(handler, "/__mdview/document");
+    const response = await requestHandler(handler, "/__sadoku/document");
 
     assertEquals(response.status, 500);
     assertMatch(await response.text(), /^Failed to render Markdown:/);

@@ -281,7 +281,7 @@ export const handleCommentsRequest = async (
   filePath: string,
   pathname: string,
 ): Promise<Response> => {
-  const commentsPath = "/__mdview/comments";
+  const commentsPath = "/__sadoku/comments";
   if (pathname === commentsPath && request.method === "GET") {
     return noStoreJson(await readResolvedCommentsDocument(filePath));
   }

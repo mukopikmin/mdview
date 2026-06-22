@@ -296,7 +296,19 @@ const createCommentablePre = (
     const mermaidCode = getMermaidCodeText(children);
     const element = mermaidCode === undefined
       ? <pre {...elementProps}>{children}</pre>
-      : <pre className="mermaid">{mermaidCode}</pre>;
+      : (
+        <div className="mermaid-container">
+          <pre className="mermaid">{mermaidCode}</pre>
+          <button
+            aria-label="Zoom Mermaid diagram"
+            className="mermaid-zoom-button"
+            title="Zoom Mermaid diagram"
+            type="button"
+          >
+            Zoom
+          </button>
+        </div>
+      );
     if (line === undefined) return element;
     if (ancestorSourceLines.has(line)) return element;
 

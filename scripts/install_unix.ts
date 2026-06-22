@@ -22,7 +22,7 @@ export const supportsUnixInstall = (os: string): boolean =>
   os === "darwin" || os === "linux";
 
 export const getUnixInstallPath = (home: string): string =>
-  join(home, ".local", "bin", "mdview");
+  join(home, ".local", "bin", "sadoku");
 
 const compileBinary: CompileBinary = async (buildPath, compileArgs) => {
   const result = await new Deno.Command(Deno.execPath(), {
@@ -59,8 +59,8 @@ export const installUnix = async (
   }
 
   const installPath = getUnixInstallPath(home);
-  const buildDir = await Deno.makeTempDir({ prefix: "mdview-" });
-  const buildPath = join(buildDir, "mdview");
+  const buildDir = await Deno.makeTempDir({ prefix: "sadoku-" });
+  const buildPath = join(buildDir, "sadoku");
 
   try {
     await (options.compileBinary ?? compileBinary)(
@@ -79,7 +79,7 @@ export const installUnix = async (
 
 if (import.meta.main) {
   try {
-    console.log(`Installed mdview to ${await installUnix()}`);
+    console.log(`Installed sadoku to ${await installUnix()}`);
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     Deno.exit(error instanceof CompileError ? error.exitCode : 1);

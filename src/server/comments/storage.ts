@@ -6,7 +6,8 @@ import type {
 import { basename, join } from "@std/path";
 import { readConfig } from "../../config.ts";
 
-const commentsDirectoryName = "mdview";
+const commentsDirectoryName = "sadoku";
+const legacyCommentsDirectoryName = "mdview";
 
 const hashFilePath = (filePath: string): string => {
   let hash = 0x811c9dc5;
@@ -26,17 +27,14 @@ const getEnv = (name: string): string | undefined => {
   } catch (error) {
     if (error instanceof Deno.errors.PermissionDenied) {
       throw new Error(
-        `Cannot determine comments directory without environment access. Allow HOME, XDG_CONFIG_HOME, XDG_DATA_HOME, and APPDATA.`,
+        `Cannot determine comments directory without environment access. Allow HOME, XDG_CONFIG_HOME, XDG_DATA_HOME, APPDATA, SADOKU_COMMENTS_DIR, and MDVIEW_COMMENTS_DIR.`,
       );
     }
     throw error;
   }
 };
 
-export const getCommentsDirectoryPath = (): string => {
-  const config = readConfig();
-  if (config?.commentsDirectory) return config.commentsDirectory;
-
+const getDefaultCommentsDirectoryPath = (directoryName: string): string => {
   if (Deno.build.os === "darwin") {
     const home = getEnv("HOME");
     if (home) {
@@ -44,7 +42,7 @@ export const getCommentsDirectoryPath = (): string => {
         home,
         "Library",
         "Application Support",
-        commentsDirectoryName,
+        directoryName,
         "comments",
       );
     }
@@ -52,29 +50,58 @@ export const getCommentsDirectoryPath = (): string => {
 
   if (Deno.build.os === "windows") {
     const appData = getEnv("APPDATA");
-    if (appData) return join(appData, commentsDirectoryName, "comments");
+    if (appData) return join(appData, directoryName, "comments");
   }
 
   const xdgDataHome = getEnv("XDG_DATA_HOME");
-  if (xdgDataHome) return join(xdgDataHome, commentsDirectoryName, "comments");
+  if (xdgDataHome) return join(xdgDataHome, directoryName, "comments");
 
   const home = getEnv("HOME");
   if (home) {
-    return join(home, ".local", "share", commentsDirectoryName, "comments");
+    return join(home, ".local", "share", directoryName, "comments");
   }
 
-  return join(Deno.cwd(), ".mdview", "comments");
+  return join(Deno.cwd(), `.${directoryName}`, "comments");
 };
+
+export const getCommentsDirectoryPath = (): string => {
+  const configuredDirectory = getEnv("SADOKU_COMMENTS_DIR");
+  if (configuredDirectory) return configuredDirectory;
+
+  const config = readConfig();
+  if (config?.commentsDirectory) return config.commentsDirectory;
+
+  const legacyConfiguredDirectory = getEnv("MDVIEW_COMMENTS_DIR");
+  if (legacyConfiguredDirectory) return legacyConfiguredDirectory;
+
+  return getDefaultCommentsDirectoryPath(commentsDirectoryName);
+};
+
+const getLegacyCommentsDirectoryPath = (): string =>
+  getDefaultCommentsDirectoryPath(legacyCommentsDirectoryName);
 
 export const getLegacyCommentsFilePath = (markdownFilePath: string): string =>
   `${markdownFilePath}.mdview-comments.json`;
 
-export const getCommentsFilePath = (markdownFilePath: string): string => {
-  const fileName = `${sanitizeFileNamePart(basename(markdownFilePath))}-${
+const getSadokuSidecarCommentsFilePath = (markdownFilePath: string): string =>
+  `${markdownFilePath}.sadoku-comments.json`;
+
+const getCommentsStorageFileName = (markdownFilePath: string): string =>
+  `${sanitizeFileNamePart(basename(markdownFilePath))}-${
     hashFilePath(markdownFilePath)
   }.json`;
-  return join(getCommentsDirectoryPath(), fileName);
-};
+
+export const getCommentsFilePath = (markdownFilePath: string): string =>
+  join(
+    getCommentsDirectoryPath(),
+    getCommentsStorageFileName(markdownFilePath),
+  );
+
+const getLegacyDirectoryCommentsFilePath = (markdownFilePath: string): string =>
+  join(
+    getLegacyCommentsDirectoryPath(),
+    getCommentsStorageFileName(markdownFilePath),
+  );
 
 const createEmptyCommentsDocument = (
   filePath: string,
@@ -115,18 +142,20 @@ const normalizePreviewComment = (comment: PreviewComment): PreviewComment => ({
 export const readCommentsDocument = async (
   filePath: string,
 ): Promise<PreviewCommentsDocument> => {
-  const commentsFilePath = getCommentsFilePath(filePath);
-  const text = await Deno.readTextFile(commentsFilePath).catch(
-    async (error) => {
-      if (!(error instanceof Deno.errors.NotFound)) throw error;
-      return await Deno.readTextFile(getLegacyCommentsFilePath(filePath)).catch(
-        (legacyError) => {
-          if (legacyError instanceof Deno.errors.NotFound) return undefined;
-          throw legacyError;
-        },
-      );
-    },
-  );
+  const candidatePaths = [
+    getCommentsFilePath(filePath),
+    getSadokuSidecarCommentsFilePath(filePath),
+    getLegacyDirectoryCommentsFilePath(filePath),
+    getLegacyCommentsFilePath(filePath),
+  ];
+  let text: string | undefined;
+  for (const candidatePath of candidatePaths) {
+    text = await Deno.readTextFile(candidatePath).catch((error) => {
+      if (error instanceof Deno.errors.NotFound) return undefined;
+      throw error;
+    });
+    if (text !== undefined) break;
+  }
   if (text === undefined) return createEmptyCommentsDocument(filePath);
 
   const parsed = JSON.parse(text) as Partial<PreviewCommentsDocument>;

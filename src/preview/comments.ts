@@ -26,7 +26,7 @@ export type PreviewCommentsDocument = {
 };
 
 export const loadComments = async (): Promise<PreviewCommentsDocument> => {
-  const response = await fetch("/__mdview/comments");
+  const response = await fetch("/__sadoku/comments");
   if (!response.ok) {
     throw new Error(`Failed to load comments: ${response.status}`);
   }
@@ -37,7 +37,7 @@ export const createComment = async (
   line: number,
   body: string,
 ): Promise<PreviewComment> => {
-  const response = await fetch("/__mdview/comments", {
+  const response = await fetch("/__sadoku/comments", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ line, body }),
@@ -53,7 +53,7 @@ export const createReply = async (
   body: string,
 ): Promise<PreviewComment> => {
   const response = await fetch(
-    `/__mdview/comments/${encodeURIComponent(commentId)}/replies`,
+    `/__sadoku/comments/${encodeURIComponent(commentId)}/replies`,
     {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -72,7 +72,7 @@ export const updateReply = async (
   body: string,
 ): Promise<PreviewComment> => {
   const response = await fetch(
-    `/__mdview/comments/${encodeURIComponent(commentId)}/replies/${
+    `/__sadoku/comments/${encodeURIComponent(commentId)}/replies/${
       encodeURIComponent(replyId)
     }`,
     {
@@ -92,7 +92,7 @@ export const deleteReply = async (
   replyId: string,
 ): Promise<void> => {
   const response = await fetch(
-    `/__mdview/comments/${encodeURIComponent(commentId)}/replies/${
+    `/__sadoku/comments/${encodeURIComponent(commentId)}/replies/${
       encodeURIComponent(replyId)
     }`,
     { method: "DELETE" },
@@ -106,7 +106,7 @@ export const updateComment = async (
   id: string,
   body: string,
 ): Promise<PreviewComment> => {
-  const response = await fetch(`/__mdview/comments/${encodeURIComponent(id)}`, {
+  const response = await fetch(`/__sadoku/comments/${encodeURIComponent(id)}`, {
     method: "PUT",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ body }),
@@ -119,7 +119,7 @@ export const updateComment = async (
 
 export const resolveComment = async (id: string): Promise<PreviewComment> => {
   const response = await fetch(
-    `/__mdview/comments/${encodeURIComponent(id)}/resolve`,
+    `/__sadoku/comments/${encodeURIComponent(id)}/resolve`,
     {
       method: "POST",
     },
@@ -132,7 +132,7 @@ export const resolveComment = async (id: string): Promise<PreviewComment> => {
 
 export const reopenComment = async (id: string): Promise<PreviewComment> => {
   const response = await fetch(
-    `/__mdview/comments/${encodeURIComponent(id)}/reopen`,
+    `/__sadoku/comments/${encodeURIComponent(id)}/reopen`,
     {
       method: "POST",
     },
@@ -144,7 +144,7 @@ export const reopenComment = async (id: string): Promise<PreviewComment> => {
 };
 
 export const deleteComment = async (id: string): Promise<void> => {
-  const response = await fetch(`/__mdview/comments/${encodeURIComponent(id)}`, {
+  const response = await fetch(`/__sadoku/comments/${encodeURIComponent(id)}`, {
     method: "DELETE",
   });
   if (!response.ok) {

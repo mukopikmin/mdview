@@ -1,10 +1,10 @@
 import { join } from "@std/path";
 import { parse } from "@std/toml";
 
-const appDirectoryName = "mdview";
+const appDirectoryName = "sadoku";
 const configFileName = "config.toml";
 
-export type MdviewConfig = {
+export type SadokuConfig = {
   commentsDirectory?: string;
 };
 
@@ -14,7 +14,7 @@ const getEnv = (name: string): string | undefined => {
   } catch (error) {
     if (error instanceof Deno.errors.PermissionDenied) {
       throw new Error(
-        "Cannot read mdview config without environment access. Allow HOME, XDG_CONFIG_HOME, and APPDATA.",
+        "Cannot read Sadoku config without environment access. Allow HOME, XDG_CONFIG_HOME, and APPDATA.",
       );
     }
     throw error;
@@ -38,23 +38,23 @@ export const getConfigFilePath = (): string | undefined => {
   return undefined;
 };
 
-const parseConfig = (value: unknown): MdviewConfig | undefined => {
+const parseConfig = (value: unknown): SadokuConfig | undefined => {
   if (typeof value !== "object" || value === null) return undefined;
 
-  const config: MdviewConfig = {};
+  const config: SadokuConfig = {};
   if (!("commentsDirectory" in value)) return config;
 
   const commentsDirectory = (value as { commentsDirectory: unknown })
     .commentsDirectory;
   if (typeof commentsDirectory !== "string") {
-    throw new Error("commentsDirectory in mdview config must be a string.");
+    throw new Error("commentsDirectory in Sadoku config must be a string.");
   }
 
   if (commentsDirectory) config.commentsDirectory = commentsDirectory;
   return config;
 };
 
-export const readConfig = (): MdviewConfig | undefined => {
+export const readConfig = (): SadokuConfig | undefined => {
   const configFilePath = getConfigFilePath();
   if (!configFilePath) return undefined;
 

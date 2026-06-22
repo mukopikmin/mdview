@@ -21,7 +21,7 @@ const withConfigEnvironment = async (
   const previous = new Map(
     trackedEnvironmentNames.map((name) => [name, Deno.env.get(name)]),
   );
-  const root = await Deno.makeTempDir({ prefix: "mdview-config-" });
+  const root = await Deno.makeTempDir({ prefix: "sadoku-config-" });
   const appData = join(root, "appdata");
   const configHome = join(root, "config");
   const home = join(root, "home");
@@ -31,8 +31,8 @@ const withConfigEnvironment = async (
   Deno.env.set("XDG_CONFIG_HOME", configHome);
 
   const defaultConfigFilePath = Deno.build.os === "windows"
-    ? join(appData, "mdview", "config.toml")
-    : join(configHome, "mdview", "config.toml");
+    ? join(appData, "sadoku", "config.toml")
+    : join(configHome, "sadoku", "config.toml");
 
   try {
     await run({
@@ -60,7 +60,7 @@ const writeConfig = async (
   await Deno.writeTextFile(configFilePath, text);
 };
 
-Deno.test("resolves the mdview config file path", async () => {
+Deno.test("resolves the Sadoku config file path", async () => {
   await withConfigEnvironment(async ({ defaultConfigFilePath }) => {
     assertEquals(getConfigFilePath(), defaultConfigFilePath);
   });
@@ -75,7 +75,7 @@ Deno.test({
 
       assertEquals(
         getConfigFilePath(),
-        join(root, "home", ".config", "mdview", "config.toml"),
+        join(root, "home", ".config", "sadoku", "config.toml"),
       );
     });
   },
@@ -121,7 +121,7 @@ Deno.test("rejects invalid comments directory config type", async () => {
     assertThrows(
       () => readConfig(),
       Error,
-      "commentsDirectory in mdview config must be a string.",
+      "commentsDirectory in Sadoku config must be a string.",
     );
   });
 });

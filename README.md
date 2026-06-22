@@ -1,14 +1,17 @@
-# mdview
+# Sadoku
 
-`mdview` is a small CLI for previewing one Markdown file in your browser.
+`sadoku` is a local Markdown review tool for reading, previewing, and commenting
+on one Markdown document in your browser.
 
 Pass it a Markdown file path. It starts a local HTTP server, renders the file as
-HTML, prints the preview URL, and opens that URL in your default browser.
+HTML, prints the preview URL, and opens that URL in your default browser. Review
+comments stay separate from the Markdown file so the document itself stays
+clean.
 
 ## Install
 
 On Linux and macOS, you can build in a temporary directory and install the
-binary to `$HOME/.local/bin/mdview`:
+binary to `$HOME/.local/bin/sadoku`:
 
 ```sh
 npm install
@@ -22,7 +25,7 @@ Or compile a standalone binary in the project directory:
 ```sh
 npm install
 deno task compile --version 0.1.0
-./mdview README.md
+./sadoku README.md
 ```
 
 If `--version` is omitted, the compiled binary reports the development version
@@ -31,40 +34,40 @@ If `--version` is omitted, the compiled binary reports the development version
 ## Usage
 
 ```sh
-mdview <file.md> [options]
+sadoku <file.md> [options]
 ```
 
 Preview a file:
 
 ```sh
-mdview README.md
+sadoku README.md
 ```
 
 Use a different port:
 
 ```sh
-mdview README.md --port 4000
+sadoku README.md --port 4000
 ```
 
-If the requested port is already in use, `mdview` increments it until an
+If the requested port is already in use, `sadoku` increments it until an
 available port is found.
 
 Bind to a specific host and port:
 
 ```sh
-mdview README.md --host 127.0.0.1 --port 4000
+sadoku README.md --host 127.0.0.1 --port 4000
 ```
 
 Print the URL without opening a browser:
 
 ```sh
-mdview README.md --no-open
+sadoku README.md --no-open
 ```
 
 Keep the server running after the preview tab is closed:
 
 ```sh
-mdview README.md --keep-alive
+sadoku README.md --keep-alive
 ```
 
 By default, the server reads the Markdown file again on each request, so
@@ -77,43 +80,43 @@ when you want to leave the server running.
 Comments are stored outside the Markdown file's directory so they do not appear
 as repository changes. The default comments directory is:
 
-- macOS: `~/Library/Application Support/mdview/comments`
-- Linux: `$XDG_DATA_HOME/mdview/comments`, or `~/.local/share/mdview/comments`
-- Windows: `%APPDATA%\mdview\comments`
+- macOS: `~/Library/Application Support/sadoku/comments`
+- Linux: `$XDG_DATA_HOME/sadoku/comments`, or `~/.local/share/sadoku/comments`
+- Windows: `%APPDATA%\sadoku\comments`
 
-Set `commentsDirectory` in the mdview config file to choose a different comments
+Set `commentsDirectory` in the Sadoku config file to choose a different comments
 directory:
 
-- macOS and Linux: `$XDG_CONFIG_HOME/mdview/config.toml`, or
-  `~/.config/mdview/config.toml`
-- Windows: `%APPDATA%\mdview\config.toml`
+- macOS and Linux: `$XDG_CONFIG_HOME/sadoku/config.toml`, or
+  `~/.config/sadoku/config.toml`
+- Windows: `%APPDATA%\sadoku\config.toml`
 
 ```toml
-commentsDirectory = "/path/to/mdview/comments"
+commentsDirectory = "/path/to/sadoku/comments"
 ```
 
 List stored comment files:
 
 ```sh
-mdview comments list
+sadoku comments list
 ```
 
 Inspect unresolved comments for a Markdown file as JSON:
 
 ```sh
-mdview comments inspect README.md
+sadoku comments inspect README.md
 ```
 
 Reply to a comment without resolving it:
 
 ```sh
-mdview comments reply README.md <comment-id> "Need more context."
+sadoku comments reply README.md <comment-id> "Need more context."
 ```
 
 Mark one or more comments as resolved:
 
 ```sh
-mdview comments resolve README.md <comment-id>...
+sadoku comments resolve README.md <comment-id>...
 ```
 
 The list shows each stored comment file, the target Markdown path, comment
@@ -121,17 +124,25 @@ count, unresolved comment count, and the latest `updatedAt` value from the
 stored comments.
 
 Remove a stored comment file by passing the `FILE` value from
-`mdview comments list`:
+`sadoku comments list`:
 
 ```sh
-mdview comments rm README.md-1a2b3c4d.json
+sadoku comments rm README.md-1a2b3c4d.json
 ```
 
 The remove command prompts before deleting. Pass `--force` to skip the prompt:
 
 ```sh
-mdview comments rm README.md-1a2b3c4d.json --force
+sadoku comments rm README.md-1a2b3c4d.json --force
 ```
+
+## Comment Storage
+
+Sadoku stores comments in the platform-specific application data directory by
+default. Set `SADOKU_COMMENTS_DIR` to choose a different location.
+
+For migration from mdview, Sadoku can still read `MDVIEW_COMMENTS_DIR`, existing
+mdview comment directories, and legacy `*.mdview-comments.json` sidecar files.
 
 ## Options
 
@@ -146,19 +157,19 @@ mdview comments rm README.md-1a2b3c4d.json --force
 
 ## Browser Opening
 
-`mdview` opens the preview with the platform default opener:
+`sadoku` opens the preview with the platform default opener:
 
 - macOS: `open`
 - Windows: `cmd /c start`
 - Linux: `xdg-open`
 
 Set `BROWSER` to choose the opener command explicitly. If the command contains
-`%s`, `mdview` replaces it with the preview URL. Otherwise, the URL is appended
+`%s`, `sadoku` replaces it with the preview URL. Otherwise, the URL is appended
 as the last argument.
 
 ```sh
-BROWSER=explorer.exe mdview README.md
-BROWSER='chrome.exe --new-window %s' mdview README.md
+BROWSER=explorer.exe sadoku README.md
+BROWSER='chrome.exe --new-window %s' sadoku README.md
 ```
 
 ## Development
@@ -179,11 +190,11 @@ Compile a standalone binary:
 
 ```sh
 deno task compile
-./mdview README.md
+./sadoku README.md
 ```
 
 On Linux and macOS, build in a temporary directory and install the binary to
-`$HOME/.local/bin/mdview`:
+`$HOME/.local/bin/sadoku`:
 
 ```sh
 deno task install
@@ -210,7 +221,7 @@ To build a single target:
 deno task dist --version 0.1.0 --target linux-x64
 ```
 
-Each archive includes the `mdview` binary, `LICENSE`, and
+Each archive includes the `sadoku` binary, `LICENSE`, and
 `THIRD_PARTY_NOTICES.md`. macOS and Linux targets are packaged as `.tar.gz`;
 Windows is packaged as `.zip`. `dist/checksums.txt` and per-archive `.sha256`
 files are generated for the final archives.

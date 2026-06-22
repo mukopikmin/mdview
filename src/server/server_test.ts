@@ -16,7 +16,7 @@ const stopServer = async (preview: StartedPreviewServer): Promise<void> => {
 };
 
 Deno.test("rejects missing files and directories", async () => {
-  const directory = await Deno.makeTempDir({ prefix: "mdview-server-" });
+  const directory = await Deno.makeTempDir({ prefix: "sadoku-server-" });
   try {
     await assertRejects(
       () =>
@@ -56,7 +56,7 @@ Deno.test("starts on an ephemeral port and serves the preview document", async (
     assertEquals(preview.filePath, filePath);
     assertEquals(preview.url.startsWith("http://127.0.0.1:"), true);
 
-    const response = await fetch(new URL("/__mdview/document", preview.url));
+    const response = await fetch(new URL("/__sadoku/document", preview.url));
     const document = await response.json();
     assertEquals(response.status, 200);
     assertEquals(document.markdown, "# Server test\n");

@@ -180,9 +180,23 @@ graph TD
 \`\`\`
 `);
 
-    const mermaid = container.querySelector("pre.mermaid");
+    const mermaid = container.querySelector(".mermaid-container pre.mermaid");
     expect(mermaid).not.toBeNull();
     expect(mermaid?.textContent).toBe("graph TD\n  A --> B");
+    expect(
+      screen.getByRole("button", { name: "Zoom Mermaid diagram" }),
+    ).not.toBeNull();
+  });
+
+  it("does not render Mermaid zoom buttons for regular code fences", () => {
+    renderMarkdown(`\`\`\`ts
+const value = 1;
+\`\`\`
+`);
+
+    expect(
+      screen.queryByRole("button", { name: "Zoom Mermaid diagram" }),
+    ).toBeNull();
   });
 
   it("renders longer code fences without treating nested shorter fences as blocks", () => {

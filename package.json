@@ -1,5 +1,5 @@
 {
-  "name": "mdview",
+  "name": "sadoku",
   "description": "Preview a Markdown file in a local browser-friendly server.",
   "private": true,
   "scripts": {

@@ -619,12 +619,96 @@ export const previewThemeCss = `
         font-size: 0.82rem;
       }
 
+      .mermaid-container {
+        position: relative;
+        margin-bottom: 16px;
+      }
+
+      .mermaid-container .mermaid {
+        margin-bottom: 0;
+      }
+
       .mermaid {
         overflow: auto;
         border: 1px solid var(--color-border-muted);
         border-radius: 6px;
         padding: 16px;
         background: var(--color-canvas-subtle);
+      }
+
+      .mermaid-zoom-button {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        border: 1px solid var(--color-border);
+        border-radius: 6px;
+        padding: 4px 8px;
+        background: color-mix(in srgb, var(--color-canvas) 92%, transparent);
+        color: var(--color-text);
+        cursor: pointer;
+        font: inherit;
+        font-size: 0.8rem;
+      }
+
+      .mermaid-zoom-button:hover,
+      .mermaid-zoom-button:focus-visible,
+      .mermaid-zoom-close:hover,
+      .mermaid-zoom-close:focus-visible {
+        border-color: var(--color-accent);
+        color: var(--color-accent);
+      }
+
+      .mermaid-zoom-dialog {
+        position: fixed;
+        z-index: 1000;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+
+      .mermaid-zoom-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgb(0 0 0 / 0.62);
+      }
+
+      .mermaid-zoom-content {
+        position: relative;
+        box-sizing: border-box;
+        max-width: min(1200px, 96vw);
+        max-height: 92vh;
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        padding: 44px 16px 16px;
+        background: var(--color-canvas);
+        box-shadow: 0 16px 48px rgb(0 0 0 / 0.32);
+      }
+
+      .mermaid-zoom-close {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        border: 1px solid var(--color-border);
+        border-radius: 6px;
+        background: var(--color-canvas);
+        color: var(--color-text);
+        cursor: pointer;
+        font: inherit;
+        font-size: 1.1rem;
+        line-height: 1;
+      }
+
+      .mermaid-zoom-scroller {
+        max-width: calc(96vw - 32px);
+        max-height: calc(92vh - 60px);
+        overflow: auto;
+      }
+
+      .mermaid-zoom-scroller svg {
+        display: block;
+        max-width: none;
+        max-height: none;
       }
 
       @media (max-width: 640px) {

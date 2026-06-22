@@ -15,7 +15,7 @@ export const renderSpaShell = (title: string): string =>
     <title>${escapeHtml(title)}</title>
   </head>
   <body>
-    <div id="mdview-client-root"></div>
+    <div id="sadoku-client-root"></div>
     <script type="module" src="/assets/client.js"></script>
   </body>
 </html>`;

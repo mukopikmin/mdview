@@ -30,7 +30,7 @@ describe("connectHotReload", () => {
     });
 
     const events = FakeEventSource.instances.at(-1);
-    expect(events?.url).toBe("/__mdview/events");
+    expect(events?.url).toBe("/__sadoku/events");
 
     events?.dispatchEvent(new Event("reload"));
     expect(reloads).toBe(1);

@@ -11,7 +11,7 @@ export const connectHotReload = (
     reload = () => globalThis.location.reload(),
   }: HotReloadOptions = {},
 ): () => void => {
-  const events = new EventSourceCtor("/__mdview/events");
+  const events = new EventSourceCtor("/__sadoku/events");
   const reloadPage = () => reload();
 
   events.addEventListener("reload", reloadPage);
