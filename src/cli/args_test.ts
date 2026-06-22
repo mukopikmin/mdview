@@ -119,10 +119,9 @@ Deno.test("parses comments reply command", () => {
 });
 
 Deno.test("parses comments rm command", () => {
-  assertEquals(parseArgs(["comments", "rm", "README.md-12345678.json"]), {
+  assertEquals(parseArgs(["comments", "rm", "README.md"]), {
     command: "comments-rm",
-    commentFile: "README.md-12345678.json",
-    file: undefined,
+    file: "README.md",
     force: false,
     host: "127.0.0.1",
     keepAlive: false,
@@ -130,11 +129,10 @@ Deno.test("parses comments rm command", () => {
     port: 3334,
   });
   assertEquals(
-    parseArgs(["comments", "rm", "README.md-12345678.json", "--force"]),
+    parseArgs(["comments", "rm", "README.md", "--force"]),
     {
       command: "comments-rm",
-      commentFile: "README.md-12345678.json",
-      file: undefined,
+      file: "README.md",
       force: true,
       host: "127.0.0.1",
       keepAlive: false,
@@ -192,7 +190,7 @@ Deno.test("throws usage errors for invalid options", () => {
   );
   assertInstanceOf(
     assertThrows(() =>
-      parseArgs(["comments", "rm", "README.md-12345678.json", "--port", "4000"])
+      parseArgs(["comments", "rm", "README.md", "--port", "4000"])
     ),
     CliUsageError,
   );

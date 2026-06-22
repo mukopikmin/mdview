@@ -1,11 +1,11 @@
 ---
-name: mdview-review
-description: Read unresolved mdview review comments through the mdview CLI, apply the requested changes to the referenced Markdown document, verify the result, and resolve only completed comments. Use when asked to review, address, incorporate, or fix feedback attached to a Markdown file with mdview.
+name: sadoku-review
+description: Read unresolved Sadoku review comments through the sadoku CLI, apply requested changes to the referenced Markdown document, verify the result, and resolve only completed comments. Use when asked to review, address, incorporate, or fix feedback attached to a Markdown file with Sadoku.
 ---
 
-# mdview Review
+# Sadoku Review
 
-Use the `mdview` CLI to access review comments. Do not read or modify mdview's
+Use the `sadoku` CLI to access review comments. Do not read or modify Sadoku's
 comment storage files directly.
 
 ## Workflow
@@ -14,7 +14,7 @@ comment storage files directly.
 2. Inspect its unresolved comments:
 
    ```sh
-   mdview comments inspect <markdown-path>
+   sadoku comments inspect <markdown-path>
    ```
 
    The command returns JSON containing the canonical Markdown path and
@@ -32,7 +32,7 @@ comment storage files directly.
 5. Reply to comments that need clarification and leave them unresolved:
 
    ```sh
-   mdview comments reply <markdown-path> <comment-id> "<question>"
+   sadoku comments reply <markdown-path> <comment-id> "<question>"
    ```
 
    Keep the question concise and state the missing decision or information.
@@ -44,10 +44,10 @@ comment storage files directly.
 8. Resolve only comments that were successfully addressed or already satisfied:
 
    ```sh
-   mdview comments resolve <markdown-path> <comment-id>...
+   sadoku comments resolve <markdown-path> <comment-id>...
    ```
 
-9. Run `mdview comments inspect <markdown-path>` again. Report the changed
+9. Run `sadoku comments inspect <markdown-path>` again. Report the changed
    document, replies posted, resolved comment IDs, and comments left open with
    their reasons.
 
@@ -63,11 +63,12 @@ comment storage files directly.
 - Do not reply merely to acknowledge a comment. Reply only when the response
   communicates useful information or asks a question needed to continue.
 - Do not resolve comments merely because they were reviewed.
-- Do not use `mdview comments rm`; it deletes the entire stored review file.
+- Do not use `sadoku comments rm`; it deletes every stored comment for the
+  specified Markdown document.
 
 ## Failure Handling
 
-- If `mdview` is unavailable, report that the CLI must be installed or exposed
+- If `sadoku` is unavailable, report that the CLI must be installed or exposed
   on `PATH`. Do not fall back to direct comment-storage access.
 - If `inspect` reports no comments, make no document changes unless the user
   requested additional edits independently.
