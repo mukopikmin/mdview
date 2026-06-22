@@ -108,17 +108,16 @@ The list shows each stored comment file, the target Markdown path, comment
 count, unresolved comment count, and the latest `updatedAt` value from the
 stored comments.
 
-Remove a stored comment file by passing the `FILE` value from
-`sadoku comments list`:
+Remove all stored comments for a Markdown file:
 
 ```sh
-sadoku comments rm README.md-1a2b3c4d.json
+sadoku comments rm README.md
 ```
 
 The remove command prompts before deleting. Pass `--force` to skip the prompt:
 
 ```sh
-sadoku comments rm README.md-1a2b3c4d.json --force
+sadoku comments rm README.md --force
 ```
 
 ## Comment Storage

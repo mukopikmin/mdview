@@ -1,15 +1,16 @@
 import { assertEquals, assertRejects, assertStringIncludes } from "@std/assert";
-import { basename, join } from "@std/path";
+import { basename, join, relative, resolve } from "@std/path";
 
 import {
   formatCommentFilesTable,
   inspectComments,
   listCommentFiles,
   type ListedCommentFile,
-  removeCommentFile,
+  removeComments,
+  removeCommentsIfConfirmed,
   replyToComment,
   resolveComments,
-  shouldRemoveCommentFile,
+  shouldRemoveComments,
 } from "./comments.ts";
 import {
   getCommentsDirectoryPath,
@@ -103,12 +104,12 @@ Deno.test("skips malformed comment files with a warning", async () => {
   });
 });
 
-Deno.test("parses confirmation answers for removing comment files", () => {
-  assertEquals(shouldRemoveCommentFile("y"), true);
-  assertEquals(shouldRemoveCommentFile("YES"), true);
-  assertEquals(shouldRemoveCommentFile(" yes "), true);
-  assertEquals(shouldRemoveCommentFile(""), false);
-  assertEquals(shouldRemoveCommentFile("n"), false);
+Deno.test("parses confirmation answers for removing comments", () => {
+  assertEquals(shouldRemoveComments("y"), true);
+  assertEquals(shouldRemoveComments("YES"), true);
+  assertEquals(shouldRemoveComments(" yes "), true);
+  assertEquals(shouldRemoveComments(""), false);
+  assertEquals(shouldRemoveComments("n"), false);
 });
 
 Deno.test("inspects unresolved comments with updated positions", async () => {
@@ -262,7 +263,41 @@ Deno.test("adds replies to comments", async () => {
   });
 });
 
-Deno.test("removes a comment file from the configured comments directory", async () => {
+Deno.test("removes comments for the specified Markdown file", async () => {
+  await withTempCommentsDirectory(async () => {
+    const filePath = await createTempMarkdown();
+    const otherFilePath = await createTempMarkdown();
+    try {
+      await writeCommentsDocument(filePath, {
+        comments: [],
+        filePath,
+      });
+      await writeCommentsDocument(otherFilePath, {
+        comments: [],
+        filePath: otherFilePath,
+      });
+
+      const removedFilePath = await removeComments(filePath);
+
+      assertEquals(removedFilePath, filePath);
+      assertEquals(await listCommentFiles(), {
+        entries: [{
+          commentCount: 0,
+          fileName: basename(getCommentsFilePath(otherFilePath)),
+          markdownPath: otherFilePath,
+          openCount: 0,
+          updatedAt: undefined,
+        }],
+        warnings: [],
+      });
+    } finally {
+      await removeTempMarkdown(filePath);
+      await removeTempMarkdown(otherFilePath);
+    }
+  });
+});
+
+Deno.test("resolves relative Markdown paths when removing comments", async () => {
   await withTempCommentsDirectory(async () => {
     const filePath = await createTempMarkdown();
     try {
@@ -270,36 +305,62 @@ Deno.test("removes a comment file from the configured comments directory", async
         comments: [],
         filePath,
       });
-      const commentFileName = basename(getCommentsFilePath(filePath));
 
-      await removeCommentFile(commentFileName);
-
-      assertEquals(await listCommentFiles(), {
-        entries: [],
-        warnings: [],
-      });
+      const relativeFilePath = relative(Deno.cwd(), filePath);
+      assertEquals(await removeComments(relativeFilePath), resolve(filePath));
+      assertEquals((await listCommentFiles()).entries, []);
     } finally {
       await removeTempMarkdown(filePath);
     }
   });
 });
 
-Deno.test("rejects unsafe or missing comment files when removing", async () => {
+Deno.test("keeps comments when removal confirmation is declined", async () => {
   await withTempCommentsDirectory(async () => {
+    const filePath = await createTempMarkdown();
+    try {
+      await writeCommentsDocument(filePath, {
+        comments: [],
+        filePath,
+      });
+
+      assertEquals(await removeCommentsIfConfirmed(filePath, "n"), undefined);
+      assertEquals((await listCommentFiles()).entries.length, 1);
+    } finally {
+      await removeTempMarkdown(filePath);
+    }
+  });
+});
+
+Deno.test("rejects missing Markdown files or comments when removing", async () => {
+  await withTempCommentsDirectory(async () => {
+    const missingFilePath = resolve("missing-comments-target.md");
     await assertRejects(
-      () => removeCommentFile("../README.md-12345678.json"),
+      () => removeComments(missingFilePath),
       Error,
-      "Comment file name must be a .json file without path separators.",
+      `Markdown file not found: ${missingFilePath}`,
     );
-    await assertRejects(
-      () => removeCommentFile("README.md-12345678.txt"),
-      Error,
-      "Comment file name must be a .json file without path separators.",
-    );
-    await assertRejects(
-      () => removeCommentFile("README.md-12345678.json"),
-      Error,
-      "Comment file not found: README.md-12345678.json",
-    );
+
+    const directoryPath = await Deno.makeTempDir();
+    try {
+      await assertRejects(
+        () => removeComments(directoryPath),
+        Error,
+        `Markdown path is not a file: ${directoryPath}`,
+      );
+    } finally {
+      await Deno.remove(directoryPath);
+    }
+
+    const filePath = await createTempMarkdown();
+    try {
+      await assertRejects(
+        () => removeComments(filePath),
+        Error,
+        `Comments not found for Markdown file: ${filePath}`,
+      );
+    } finally {
+      await removeTempMarkdown(filePath);
+    }
   });
 });
