@@ -1,6 +1,7 @@
 import { basename, join, resolve } from "@std/path";
 import {
   getCommentsDirectoryPath,
+  getCommentsFilePath,
   readCommentsDocument,
   writeCommentsDocument,
 } from "../server/comments/storage.ts";
@@ -61,14 +62,6 @@ const latestUpdatedAt = (
   comments: StoredComment[],
 ): string | undefined =>
   comments.map((comment) => comment.updatedAt).sort().at(-1);
-
-const isSafeCommentFileName = (fileName: string): boolean =>
-  fileName !== "" &&
-  fileName === basename(fileName) &&
-  !fileName.includes("/") &&
-  !fileName.includes("\\") &&
-  !fileName.includes("..") &&
-  fileName.endsWith(".json");
 
 export const listCommentFiles = async (): Promise<ListCommentFilesResult> => {
   const commentsDirectoryPath = getCommentsDirectoryPath();
@@ -139,7 +132,7 @@ export const formatCommentFilesTable = (
   return `${formatRow(headers)}\n${rows.map(formatRow).join("\n")}\n`;
 };
 
-export const shouldRemoveCommentFile = (answer: string): boolean =>
+export const shouldRemoveComments = (answer: string): boolean =>
   ["y", "yes"].includes(answer.trim().toLowerCase());
 
 export const inspectComments = async (
@@ -236,21 +229,33 @@ export const replyToComment = async (
   );
 };
 
-export const removeCommentFile = async (
-  fileName: string,
-): Promise<void> => {
-  if (!isSafeCommentFileName(fileName)) {
-    throw new Error(
-      "Comment file name must be a .json file without path separators.",
-    );
+export const removeComments = async (filePath: string): Promise<string> => {
+  const resolvedFilePath = resolve(filePath);
+  const fileInfo = await Deno.stat(resolvedFilePath).catch((error) => {
+    if (error instanceof Deno.errors.NotFound) {
+      throw new Error(`Markdown file not found: ${resolvedFilePath}`);
+    }
+    throw error;
+  });
+  if (!fileInfo.isFile) {
+    throw new Error(`Markdown path is not a file: ${resolvedFilePath}`);
   }
 
-  await Deno.remove(join(getCommentsDirectoryPath(), fileName)).catch(
+  await Deno.remove(getCommentsFilePath(resolvedFilePath)).catch(
     (error) => {
       if (error instanceof Deno.errors.NotFound) {
-        throw new Error(`Comment file not found: ${fileName}`);
+        throw new Error(
+          `Comments not found for Markdown file: ${resolvedFilePath}`,
+        );
       }
       throw error;
     },
   );
+  return resolvedFilePath;
 };
+
+export const removeCommentsIfConfirmed = async (
+  filePath: string,
+  answer: string,
+): Promise<string | undefined> =>
+  shouldRemoveComments(answer) ? await removeComments(filePath) : undefined;
