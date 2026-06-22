@@ -14,21 +14,21 @@ const targets: Target[] = [
   {
     id: "darwin-arm64",
     denoTarget: "aarch64-apple-darwin",
-    binaryName: "mdview",
+    binaryName: "sadoku",
     archiveType: "tar.gz",
     native: Deno.build.os === "darwin" && Deno.build.arch === "aarch64",
   },
   {
     id: "linux-x64",
     denoTarget: "x86_64-unknown-linux-gnu",
-    binaryName: "mdview",
+    binaryName: "sadoku",
     archiveType: "tar.gz",
     native: Deno.build.os === "linux" && Deno.build.arch === "x86_64",
   },
   {
     id: "windows-x64",
     denoTarget: "x86_64-pc-windows-msvc",
-    binaryName: "mdview.exe",
+    binaryName: "sadoku.exe",
     archiveType: "zip",
     native: Deno.build.os === "windows" && Deno.build.arch === "x86_64",
   },
@@ -144,9 +144,9 @@ const archive = async (
   version: string,
   binaryPath: string,
 ): Promise<string> => {
-  const root = `mdview-v${version}-${target.id}`;
+  const root = `sadoku-v${version}-${target.id}`;
   const stagingDir = await Deno.makeTempDir({
-    prefix: `mdview-release-${target.id}-`,
+    prefix: `sadoku-release-${target.id}-`,
   });
   const rootDir = join(stagingDir, root);
 
@@ -163,7 +163,7 @@ const archive = async (
       join(rootDir, "THIRD_PARTY_NOTICES.md"),
     );
 
-    const archiveName = `mdview-v${version}-${target.id}.${target.archiveType}`;
+    const archiveName = `sadoku-v${version}-${target.id}.${target.archiveType}`;
     const archivePath = join(Deno.cwd(), "dist", archiveName);
     if (target.archiveType === "zip") {
       await run("zip", ["-qr", archivePath, root], stagingDir);
@@ -222,7 +222,7 @@ const readLineUntilPreview = async (
 
 const verifyNativeBinary = async (binaryPath: string): Promise<void> => {
   const fixture = await Deno.makeTempFile({
-    prefix: "mdview-release-",
+    prefix: "sadoku-release-",
     suffix: ".md",
   });
   await Deno.writeTextFile(
@@ -251,7 +251,7 @@ const verifyNativeBinary = async (binaryPath: string): Promise<void> => {
       throw new Error("Preview page did not include the preview client.");
     }
 
-    const document = await (await fetch(new URL("/__mdview/document", url)))
+    const document = await (await fetch(new URL("/__sadoku/document", url)))
       .json() as { markdown?: string };
     if (!document.markdown?.includes("```mermaid")) {
       throw new Error("Preview document API did not return the Mermaid block.");
@@ -288,7 +288,7 @@ await run(Deno.execPath(), ["task", "notices"]);
 const checksums: string[] = [];
 
 for (const target of releaseTargets) {
-  const buildDir = await Deno.makeTempDir({ prefix: `mdview-${target.id}-` });
+  const buildDir = await Deno.makeTempDir({ prefix: `sadoku-${target.id}-` });
   const binaryPath = join(buildDir, target.binaryName);
 
   try {

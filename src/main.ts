@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --allow-read --allow-write --allow-net --allow-run --allow-env=BROWSER,HOME,XDG_DATA_HOME,APPDATA,MDVIEW_COMMENTS_DIR
+#!/usr/bin/env -S deno run --allow-read --allow-write --allow-net --allow-run --allow-env=BROWSER,HOME,XDG_DATA_HOME,APPDATA,SADOKU_COMMENTS_DIR,MDVIEW_COMMENTS_DIR
 import { CliUsageError, parseArgs, usage, version } from "./cli/args.ts";
 import { openBrowser } from "./cli/browser.ts";
 import {
@@ -22,7 +22,7 @@ const main = async (): Promise<void> => {
   }
 
   if (options.version) {
-    console.log(`mdview ${version}`);
+    console.log(`sadoku ${version}`);
     return;
   }
 

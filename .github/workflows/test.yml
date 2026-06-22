@@ -46,11 +46,11 @@ jobs:
         run: deno task test
 
       - name: Compile
-        run: deno task compile --output /tmp/mdview-ci
+        run: deno task compile --output /tmp/sadoku-ci
 
       - name: Test Linux installer
         run: |
           install_home="$(mktemp -d)"
           trap 'rm -rf "$install_home"' EXIT
           HOME="$install_home" deno task install --version 0.0.0-ci
-          test "$("$install_home/.local/bin/mdview" --version)" = "mdview 0.0.0-ci"
+          test "$("$install_home/.local/bin/sadoku" --version)" = "sadoku 0.0.0-ci"

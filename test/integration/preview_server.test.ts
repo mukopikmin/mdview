@@ -5,7 +5,7 @@ import { createPreviewHandler } from "../../src/server/mod.ts";
 Deno.test("serves hot reload events as an SSE stream", async () => {
   const filePath = "test/integration/fixtures/comprehensive.md";
   const response = await createPreviewHandler(filePath)(
-    new Request("http://127.0.0.1:3334/__mdview/events"),
+    new Request("http://127.0.0.1:3334/__sadoku/events"),
     {} as Deno.ServeHandlerInfo<Deno.NetAddr>,
   );
 
@@ -34,7 +34,7 @@ Deno.test("serves the preview client asset", async () => {
   );
   assertEquals(response.headers.get("cache-control"), "no-store");
   const script = await response.text();
-  assertEquals(script.includes("/__mdview/events"), true);
+  assertEquals(script.includes("/__sadoku/events"), true);
   assertEquals(script.includes("process.env"), false);
 });
 
@@ -52,14 +52,14 @@ Deno.test("serves the SPA shell", async () => {
     response.headers.get("content-type"),
     "text/html; charset=utf-8",
   );
-  assertEquals(html.includes('<div id="mdview-client-root"></div>'), true);
+  assertEquals(html.includes('<div id="sadoku-client-root"></div>'), true);
   assertEquals(html.includes('src="/assets/client.js"'), true);
 });
 
 Deno.test("serves the raw preview document for the SPA", async () => {
   const filePath = "test/integration/fixtures/comprehensive.md";
   const response = await createPreviewHandler(filePath)(
-    new Request("http://127.0.0.1:3334/__mdview/document"),
+    new Request("http://127.0.0.1:3334/__sadoku/document"),
     {} as Deno.ServeHandlerInfo<Deno.NetAddr>,
   );
 

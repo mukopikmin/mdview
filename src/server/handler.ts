@@ -78,20 +78,20 @@ async (request) => {
     const requestUrl = new URL(request.url);
     const { pathname } = requestUrl;
 
-    if (pathname === "/__mdview/events") {
+    if (pathname === "/__sadoku/events") {
       if (isRemoteSource) {
         return handleRemoteEventRequest(request, options);
       }
       return handleHotReloadEventRequest(resolvedFilePath, request, options);
     }
 
-    if (pathname === "/__mdview/document") {
+    if (pathname === "/__sadoku/document") {
       return await handlePreviewDocumentRequest(resolvedFilePath);
     }
 
-    if (pathname.startsWith("/__mdview/comments")) {
+    if (pathname.startsWith("/__sadoku/comments")) {
       if (isRemoteSource) {
-        if (pathname === "/__mdview/comments" && request.method === "GET") {
+        if (pathname === "/__sadoku/comments" && request.method === "GET") {
           return noStoreJson({ comments: [], filePath: resolvedFilePath });
         }
         return textResponse(

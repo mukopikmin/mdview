@@ -1,8 +1,9 @@
 {
   "nodeModulesDir": "none",
   "tasks": {
-    "start": "npm run build:client && DENO_NO_PACKAGE_JSON=1 deno run --allow-read --allow-write --allow-net --allow-run --allow-env=BROWSER,HOME,XDG_DATA_HOME,APPDATA,MDVIEW_COMMENTS_DIR src/main.ts",
-    "test": "npm run build:client && DENO_NO_PACKAGE_JSON=1 deno test --allow-read --allow-write --allow-env=HOME,XDG_DATA_HOME,APPDATA,MDVIEW_COMMENTS_DIR --allow-net=127.0.0.1 test scripts/install_unix_test.ts src/cli src/log_test.ts src/server",
+    "start": "npm run build:client && DENO_NO_PACKAGE_JSON=1 deno run --allow-read --allow-write --allow-net --allow-run --allow-env=BROWSER,HOME,XDG_DATA_HOME,APPDATA,SADOKU_COMMENTS_DIR,MDVIEW_COMMENTS_DIR src/main.ts",
+    "run": "DENO_NO_PACKAGE_JSON=1 deno run --allow-read --allow-write --allow-net --allow-run --allow-env=BROWSER,HOME,XDG_DATA_HOME,APPDATA,SADOKU_COMMENTS_DIR,MDVIEW_COMMENTS_DIR src/main.ts",
+    "test": "npm run build:client && DENO_NO_PACKAGE_JSON=1 deno test --allow-read --allow-write --allow-env=HOME,XDG_DATA_HOME,APPDATA,SADOKU_COMMENTS_DIR,MDVIEW_COMMENTS_DIR --allow-net=127.0.0.1 test scripts/install_unix_test.ts src/cli src/log_test.ts src/server",
     "notices": "DENO_NO_PACKAGE_JSON=1 deno run --allow-read --allow-write scripts/generate_third_party_notices.ts",
     "compile": "npm run build:client && DENO_NO_PACKAGE_JSON=1 deno run --allow-read --allow-write --allow-run=deno scripts/compile.ts",
     "dist": "npm run build:client && DENO_NO_PACKAGE_JSON=1 deno run --allow-read --allow-write --allow-run --allow-net=127.0.0.1:39731 scripts/build_release.ts",

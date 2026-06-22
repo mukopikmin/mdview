@@ -14,8 +14,8 @@ Deno.test("supports macOS and Linux installs", () => {
 
 Deno.test("builds the install path under the user home directory", () => {
   assertEquals(
-    getUnixInstallPath("/home/mdview-user"),
-    "/home/mdview-user/.local/bin/mdview",
+    getUnixInstallPath("/home/sadoku-user"),
+    "/home/sadoku-user/.local/bin/sadoku",
   );
 });
 
@@ -23,7 +23,7 @@ Deno.test("rejects unsupported operating systems", async () => {
   await assertRejects(
     () =>
       installUnix({
-        home: "/tmp/mdview-home",
+        home: "/tmp/sadoku-home",
         os: "windows",
       }),
     Error,
@@ -32,21 +32,21 @@ Deno.test("rejects unsupported operating systems", async () => {
 });
 
 Deno.test("installs an executable compiled binary", async () => {
-  const home = await Deno.makeTempDir({ prefix: "mdview-install-test-" });
+  const home = await Deno.makeTempDir({ prefix: "sadoku-install-test-" });
 
   try {
     const installPath = await installUnix({
       compileArgs: ["--version", "1.2.3"],
       compileBinary: async (buildPath, compileArgs) => {
         assertEquals(compileArgs, ["--version", "1.2.3"]);
-        await Deno.writeTextFile(buildPath, "compiled mdview");
+        await Deno.writeTextFile(buildPath, "compiled sadoku");
       },
       home,
       os: "linux",
     });
 
     assertEquals(installPath, getUnixInstallPath(home));
-    assertEquals(await Deno.readTextFile(installPath), "compiled mdview");
+    assertEquals(await Deno.readTextFile(installPath), "compiled sadoku");
     assertEquals((await Deno.stat(installPath)).mode! & 0o777, 0o755);
   } finally {
     await Deno.remove(home, { recursive: true });

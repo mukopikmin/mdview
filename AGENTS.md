@@ -48,7 +48,7 @@ them when making changes.
 - Follow the existing React and TypeScript patterns in `src/preview/`.
 - Keep Markdown feature support aligned with the table in `README.md`. Update
   the table and tests when support changes.
-- `src/preview/dist/`, root `dist/`, `mdview`, and `THIRD_PARTY_NOTICES.md` are
+- `src/preview/dist/`, root `dist/`, `sadoku`, and `THIRD_PARTY_NOTICES.md` are
   generated outputs and MUST NOT be committed.
 - Build client assets with `npm run build:client`; do not edit generated files
   under `src/preview/dist/`.

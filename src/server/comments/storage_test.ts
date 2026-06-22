@@ -155,3 +155,48 @@ Deno.test("reads legacy comments stored next to the Markdown file", async () => 
     }
   });
 });
+
+Deno.test("reads comments from legacy mdview comments directory", async () => {
+  const previousHome = Deno.env.get("HOME");
+  const previousSadoku = Deno.env.get("SADOKU_COMMENTS_DIR");
+  const previousMdview = Deno.env.get("MDVIEW_COMMENTS_DIR");
+  const home = await Deno.makeTempDir({ prefix: "sadoku-home-" });
+  Deno.env.set("HOME", home);
+  Deno.env.delete("SADOKU_COMMENTS_DIR");
+  Deno.env.delete("MDVIEW_COMMENTS_DIR");
+
+  const filePath = await createTempMarkdown();
+  try {
+    const legacyDirectory = `${home}/.local/share/mdview/comments`;
+    await Deno.mkdir(legacyDirectory, { recursive: true });
+    const legacyFileName = getCommentsFilePath(filePath).split("/").at(-1);
+    if (!legacyFileName) throw new Error("Missing comments file name.");
+    await Deno.writeTextFile(
+      `${legacyDirectory}/${legacyFileName}`,
+      JSON.stringify({
+        comments: [{
+          body: "Legacy directory comment",
+          createdAt: "2026-06-07T00:00:00.000Z",
+          id: "comment-1",
+          line: 3,
+          updatedAt: "2026-06-07T00:00:00.000Z",
+        }],
+        filePath,
+      }),
+    );
+
+    const document = await readCommentsDocument(filePath);
+
+    assertEquals(document.comments.length, 1);
+    assertEquals(document.comments[0].body, "Legacy directory comment");
+  } finally {
+    await removeTempMarkdown(filePath);
+    if (previousHome === undefined) Deno.env.delete("HOME");
+    else Deno.env.set("HOME", previousHome);
+    if (previousSadoku === undefined) Deno.env.delete("SADOKU_COMMENTS_DIR");
+    else Deno.env.set("SADOKU_COMMENTS_DIR", previousSadoku);
+    if (previousMdview === undefined) Deno.env.delete("MDVIEW_COMMENTS_DIR");
+    else Deno.env.set("MDVIEW_COMMENTS_DIR", previousMdview);
+    await Deno.remove(home, { recursive: true }).catch(() => {});
+  }
+});

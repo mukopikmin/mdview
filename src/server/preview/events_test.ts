@@ -30,7 +30,7 @@ const readUntilDone = async (
 };
 
 Deno.test("emits a reload event when the Markdown file changes", async () => {
-  const directory = await Deno.makeTempDir({ prefix: "mdview-events-" });
+  const directory = await Deno.makeTempDir({ prefix: "sadoku-events-" });
   const filePath = resolve(directory, "document.md");
   await Deno.writeTextFile(filePath, "first");
   const controller = new AbortController();
@@ -71,7 +71,7 @@ Deno.test("emits a reload event when the Markdown file changes", async () => {
 });
 
 Deno.test("ignores changes to other files in the watched directory", async () => {
-  const directory = await Deno.makeTempDir({ prefix: "mdview-events-" });
+  const directory = await Deno.makeTempDir({ prefix: "sadoku-events-" });
   const filePath = resolve(directory, "document.md");
   const otherPath = resolve(directory, "other.md");
   await Deno.writeTextFile(filePath, "document");
@@ -91,7 +91,7 @@ Deno.test("ignores changes to other files in the watched directory", async () =>
 });
 
 Deno.test("reports stream closure only once after abort and cancellation", async () => {
-  const directory = await Deno.makeTempDir({ prefix: "mdview-events-" });
+  const directory = await Deno.makeTempDir({ prefix: "sadoku-events-" });
   const filePath = resolve(directory, "document.md");
   await Deno.writeTextFile(filePath, "document");
   const controller = new AbortController();

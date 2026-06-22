@@ -35,7 +35,7 @@ type LoadState =
 type View = "comments" | "preview";
 
 const loadPreviewDocument = async (): Promise<PreviewDocument> => {
-  const response = await fetch("/__mdview/document");
+  const response = await fetch("/__sadoku/document");
   if (!response.ok) {
     throw new Error(`Failed to load Markdown: ${response.status}`);
   }

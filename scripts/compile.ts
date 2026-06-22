@@ -7,7 +7,7 @@ const versionPath = new URL("../src/version.ts", import.meta.url);
 
 const parseOutputPath = (args: string[]): string => {
   const outputIndex = args.indexOf("--output");
-  if (outputIndex === -1) return "mdview";
+  if (outputIndex === -1) return "sadoku";
 
   const outputPath = args[outputIndex + 1];
   if (!outputPath) {
@@ -62,7 +62,7 @@ const command = new Deno.Command(Deno.execPath(), {
     "--allow-write",
     "--allow-net",
     "--allow-run",
-    "--allow-env=BROWSER,HOME,XDG_DATA_HOME,APPDATA,MDVIEW_COMMENTS_DIR",
+    "--allow-env=BROWSER,HOME,XDG_DATA_HOME,APPDATA,SADOKU_COMMENTS_DIR,MDVIEW_COMMENTS_DIR",
     "--include",
     "src/preview/dist",
     ...targetArgs,

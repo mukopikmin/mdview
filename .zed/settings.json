@@ -1,0 +1,19 @@
+{
+  "lsp": {
+    "deno": {
+      "settings": {
+        "deno": {
+          "enable": true,
+          "config": "./deno.json",
+          "disablePaths": ["src/preview"]
+        }
+      }
+    }
+  },
+  "languages": {
+    "TypeScript": {
+      "language_servers": ["deno", "..."],
+      "formatter": "language_server"
+    }
+  }
+}

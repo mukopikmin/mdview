@@ -32,14 +32,14 @@ describe("App", () => {
       "fetch",
       vi.fn((input: RequestInfo | URL) => {
         const url = String(input);
-        if (url === "/__mdview/document") {
+        if (url === "/__sadoku/document") {
           return Promise.resolve(Response.json({
             fileUrl: "file:///tmp/example.md",
             markdown: "```mermaid\ngraph TD\n  A --> B\n```\n",
             title: "example.md",
           }));
         }
-        if (url === "/__mdview/comments") {
+        if (url === "/__sadoku/comments") {
           return Promise.resolve(Response.json({
             comments: [],
             filePath: "/tmp/example.md",
@@ -65,14 +65,14 @@ describe("App", () => {
       "fetch",
       vi.fn((input: RequestInfo | URL) => {
         const url = String(input);
-        if (url === "/__mdview/document") {
+        if (url === "/__sadoku/document") {
           return Promise.resolve(Response.json({
             fileUrl: "file:///tmp/example.md",
             markdown: "# Title\n\nBody\n",
             title: "example.md",
           }));
         }
-        if (url === "/__mdview/comments") {
+        if (url === "/__sadoku/comments") {
           return Promise.resolve(Response.json({
             comments: [
               {
