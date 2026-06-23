@@ -163,6 +163,7 @@ Deno.test("parses help", () => {
   assertMatch(usage, /comments reply/);
   assertMatch(usage, /comments resolve/);
   assertMatch(usage, /comments rm/);
+  assertMatch(usage, /comments inspect <file\.md\|url>/);
   assertMatch(usage, /--keep-alive/);
 });
 
