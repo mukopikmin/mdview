@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { submitCommentOnShortcut } from "./commentShortcuts";
 import type { PreviewComment, PreviewCommentReply } from "./comments";
 
 export type CommentItemProps = {
@@ -51,7 +52,7 @@ const ReplyItem = ({
 
   const handleUpdate = async () => {
     const body = draft.trim();
-    if (!body) return;
+    if (!body || disabled) return;
     setSaving(true);
     try {
       await onUpdate(commentId, reply.id, body);
@@ -104,8 +105,13 @@ const ReplyItem = ({
           <>
             <textarea
               aria-label="Edit reply body"
+              autoFocus
               className="comment-input"
               onChange={(event) => setDraft(event.target.value)}
+              onKeyDown={(event) =>
+                submitCommentOnShortcut(event, () => {
+                  void handleUpdate();
+                })}
               value={draft}
             />
             <div className="comment-actions">
@@ -162,7 +168,7 @@ export const CommentItem = ({
 
   const handleUpdate = async () => {
     const body = draft.trim();
-    if (!body) return;
+    if (!body || isSaving) return;
     setIsSaving(true);
     setError(undefined);
     try {
@@ -188,7 +194,7 @@ export const CommentItem = ({
 
   const handleReply = async () => {
     const body = replyDraft.trim();
-    if (!body) return;
+    if (!body || isSaving) return;
     setIsSaving(true);
     setError(undefined);
     try {
@@ -297,8 +303,13 @@ export const CommentItem = ({
         ? (
           <>
             <textarea
+              autoFocus
               className="comment-input"
               onChange={(event) => setDraft(event.target.value)}
+              onKeyDown={(event) =>
+                submitCommentOnShortcut(event, () => {
+                  void handleUpdate();
+                })}
               value={draft}
             />
             <div className="comment-actions">
@@ -343,8 +354,13 @@ export const CommentItem = ({
         <div className="comment-reply-form">
           <textarea
             aria-label="Reply body"
+            autoFocus
             className="comment-input"
             onChange={(event) => setReplyDraft(event.target.value)}
+            onKeyDown={(event) =>
+              submitCommentOnShortcut(event, () => {
+                void handleReply();
+              })}
             placeholder="Write a reply..."
             value={replyDraft}
           />
