@@ -25,7 +25,7 @@ export const getUnixInstallPath = (home: string): string =>
   join(home, ".local", "bin", "sadoku");
 
 const compileBinary: CompileBinary = async (buildPath, compileArgs) => {
-  const result = await new Deno.Command(Deno.execPath(), {
+  const result = await new Deno.Command("deno", {
     args: [
       "run",
       "--allow-read",

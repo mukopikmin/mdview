@@ -292,3 +292,50 @@ testWithTempComments("accepts URL-encoded comment identifiers", async () => {
     await removeTempMarkdown(filePath);
   }
 });
+
+testWithTempComments(
+  "stores URL comments by URL without query string or fragment",
+  async () => {
+    const source = Deno.serve(
+      { hostname: "127.0.0.1", port: 0, onListen: () => {} },
+      (request) => {
+        const url = new URL(request.url);
+        return new Response(`# Remote ${url.searchParams.get("token")}\n`);
+      },
+    );
+    const baseUrl = `http://127.0.0.1:${source.addr.port}/remote.md`;
+    const firstHandler = createPreviewHandler(`${baseUrl}?token=a#section`);
+    const secondHandler = createPreviewHandler(`${baseUrl}?token=b`);
+
+    try {
+      const createResponse = await requestComments(
+        firstHandler,
+        "/__sadoku/comments",
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ line: 1, body: "Review remote source." }),
+        },
+      );
+      const comment = await createResponse.json();
+
+      assertEquals(createResponse.status, 200);
+      assertEquals(comment.sourceText, "# Remote a");
+
+      const listResponse = await requestComments(
+        secondHandler,
+        "/__sadoku/comments",
+      );
+      const document = await listResponse.json();
+
+      assertEquals(listResponse.status, 200);
+      assertEquals(document.filePath, baseUrl);
+      assertEquals(document.comments.length, 1);
+      assertEquals(document.comments[0].body, "Review remote source.");
+      assertEquals(document.comments[0].stale, true);
+    } finally {
+      await source.shutdown().catch(() => {});
+      await source.finished.catch(() => {});
+    }
+  },
+);

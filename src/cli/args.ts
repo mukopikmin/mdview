@@ -29,7 +29,7 @@ export class CliUsageError extends Error {
 }
 
 export const usage = `Usage:
-  sadoku <file.md> [--port <port>] [--host <host>] [--no-open] [--keep-alive]
+  sadoku <file.md|url> [--port <port>] [--host <host>] [--no-open] [--keep-alive]
   sadoku comments inspect <file.md>
   sadoku comments reply <file.md> <comment-id> <body>
   sadoku comments resolve <file.md> <comment-id>...

@@ -1,5 +1,6 @@
 import type { PreviewComment, PreviewCommentsDocument } from "./types.ts";
 import { readCommentsDocument } from "./storage.ts";
+import { readMarkdownSource } from "../source.ts";
 
 const lineSearchRadius = 40;
 
@@ -80,10 +81,11 @@ export const resolveCommentPosition = (
 
 export const readResolvedCommentsDocument = async (
   filePath: string,
+  markdownSource = filePath,
 ): Promise<PreviewCommentsDocument> => {
   const [document, markdown] = await Promise.all([
     readCommentsDocument(filePath),
-    Deno.readTextFile(filePath),
+    readMarkdownSource(markdownSource),
   ]);
   return {
     comments: document.comments.map((comment) =>

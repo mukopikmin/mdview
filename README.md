@@ -3,10 +3,10 @@
 `sadoku` is a local Markdown review tool for reading, previewing, and commenting
 on one Markdown document in your browser.
 
-Pass it a Markdown file path. It starts a local HTTP server, renders the file as
-HTML, prints the preview URL, and opens that URL in your default browser. Review
-comments stay separate from the Markdown file so the document itself stays
-clean.
+Pass it a Markdown file path or an HTTP(S) URL. It starts a local HTTP server,
+renders the source as HTML, prints the preview URL, and opens that URL in your
+default browser. Review comments stay separate from local Markdown files so the
+documents themselves stay clean.
 
 ## Install
 
@@ -34,13 +34,19 @@ If `--version` is omitted, the compiled binary reports the development version
 ## Usage
 
 ```sh
-sadoku <file.md> [options]
+sadoku <file.md|url> [options]
 ```
 
 Preview a file:
 
 ```sh
 sadoku README.md
+```
+
+Preview Markdown from a URL:
+
+```sh
+sadoku 'https://example.com/README.md?token=temporary'
 ```
 
 Use a different port:
@@ -70,15 +76,34 @@ Keep the server running after the preview tab is closed:
 sadoku README.md --keep-alive
 ```
 
-By default, the server reads the Markdown file again on each request, so
-refreshing the page shows recent edits. The browser preview also reloads
-automatically when the Markdown file changes.
+By default, the server reads the Markdown file or fetches the Markdown URL again
+on each request, so refreshing the page shows recent edits. The browser preview
+also reloads automatically when a local Markdown file changes.
 
 By default, the server stops after the browser tab is closed. Use `--keep-alive`
 when you want to leave the server running.
 
-Comments are stored separately from the Markdown file so they do not appear as
-repository changes.
+Comments are stored outside the Markdown file's directory so they do not appear
+as repository changes. The default comments directory is:
+
+- macOS: `~/Library/Application Support/sadoku/comments`
+- Linux: `$XDG_DATA_HOME/sadoku/comments`, or `~/.local/share/sadoku/comments`
+- Windows: `%APPDATA%\sadoku\comments`
+
+Set `commentsDirectory` in the Sadoku config file to choose a different comments
+directory:
+
+- macOS and Linux: `$XDG_CONFIG_HOME/sadoku/config.toml`, or
+  `~/.config/sadoku/config.toml`
+- Windows: `%APPDATA%\sadoku\config.toml`
+
+```toml
+commentsDirectory = "/path/to/sadoku/comments"
+```
+
+For URL previews, comments are keyed by the URL without its query string or
+fragment. The full URL is still used to fetch Markdown, so temporary tokens can
+be present in the URL without splitting comments across multiple comment files.
 
 List stored comment files:
 

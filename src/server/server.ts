@@ -1,6 +1,6 @@
-import { resolve } from "@std/path";
 import { formatLogMessage, logError, logInfo } from "../log.ts";
 import { createPreviewHandler } from "./handler.ts";
+import { createPreviewSource } from "./source.ts";
 
 export type PreviewServerOptions = {
   file: string;
@@ -120,22 +120,28 @@ const serveOnAvailablePort = (
 export const startPreviewServer = async (
   options: PreviewServerOptions,
 ): Promise<StartedPreviewServer> => {
-  const filePath = resolve(options.file);
-  const fileStat = await Deno.stat(filePath).catch(() => undefined);
-  if (!fileStat?.isFile) {
-    throw new Error(`Markdown file not found: ${filePath}`);
+  const previewSource = createPreviewSource(options.file);
+  if (!previewSource.isRemote) {
+    const fileStat = await Deno.stat(previewSource.documentSource).catch(() =>
+      undefined
+    );
+    if (!fileStat?.isFile) {
+      throw new Error(
+        `Markdown file not found: ${previewSource.documentSource}`,
+      );
+    }
   }
 
   let server: Deno.HttpServer<Deno.NetAddr>;
   const shutdownScheduler = createPreviewShutdownScheduler({
-    filePath,
+    filePath: previewSource.documentSource,
     keepAlive: options.keepAlive,
     shutdown: () => server.shutdown(),
   });
 
   server = serveOnAvailablePort(
     options,
-    createPreviewHandler(filePath, shutdownScheduler),
+    createPreviewHandler(previewSource, shutdownScheduler),
   );
 
   const url = `http://${server.addr.hostname}:${server.addr.port}/`;
@@ -150,5 +156,5 @@ export const startPreviewServer = async (
     }
   });
 
-  return { filePath, url, server };
+  return { filePath: previewSource.documentSource, url, server };
 };

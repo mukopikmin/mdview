@@ -1,13 +1,13 @@
-import { basename, toFileUrl } from "@std/path";
 import { noStoreJson } from "../responses.ts";
+import { readMarkdownSource, sourceTitle, sourceUrl } from "../source.ts";
 
 export const handlePreviewDocumentRequest = async (
-  filePath: string,
+  documentSource: string,
 ): Promise<Response> => {
-  const markdown = await Deno.readTextFile(filePath);
+  const markdown = await readMarkdownSource(documentSource);
   return noStoreJson({
-    title: basename(filePath),
-    fileUrl: toFileUrl(filePath).href,
+    title: sourceTitle(documentSource),
+    fileUrl: sourceUrl(documentSource),
     markdown,
   });
 };

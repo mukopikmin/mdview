@@ -172,3 +172,31 @@ Deno.test("does not schedule shutdown when keepAlive is enabled", async () => {
 
   assertEquals(shutdowns, 0);
 });
+
+Deno.test("starts the preview server for a URL source", async () => {
+  const source = Deno.serve(
+    { hostname: "127.0.0.1", port: 0, onListen: () => {} },
+    () => new Response("# Remote server test\n"),
+  );
+  const sourceUrl = `http://127.0.0.1:${source.addr.port}/remote.md?token=a`;
+  const preview = await startPreviewServer({
+    file: sourceUrl,
+    host: "127.0.0.1",
+    keepAlive: true,
+    port: 0,
+  });
+
+  try {
+    assertEquals(preview.filePath, sourceUrl);
+    const response = await fetch(new URL("/__sadoku/document", preview.url));
+    const document = await response.json();
+
+    assertEquals(response.status, 200);
+    assertEquals(document.fileUrl, sourceUrl);
+    assertEquals(document.markdown, "# Remote server test\n");
+  } finally {
+    await stopServer(preview);
+    await source.shutdown().catch(() => {});
+    await source.finished.catch(() => {});
+  }
+});

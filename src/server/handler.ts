@@ -1,10 +1,14 @@
-import { basename, resolve } from "@std/path";
 import { handleCommentsRequest } from "./comments/handler.ts";
 import { handlePreviewAssetRequest } from "./preview/assets.ts";
 import { handlePreviewDocumentRequest } from "./preview/document.ts";
 import { createHotReloadEventStream } from "./preview/events.ts";
 import { renderSpaShell } from "./preview/shell.ts";
 import { textResponse } from "./responses.ts";
+import {
+  createPreviewSource,
+  type PreviewSource,
+  sourceTitle,
+} from "./source.ts";
 
 export type PreviewHandlerOptions = {
   onEventStreamClose?: () => void;
@@ -12,12 +16,12 @@ export type PreviewHandlerOptions = {
 };
 
 const handleHotReloadEventRequest = (
-  filePath: string,
+  documentSource: string,
   request: Request,
   options: PreviewHandlerOptions,
 ): Response =>
   new Response(
-    createHotReloadEventStream(filePath, request.signal, options),
+    createHotReloadEventStream(documentSource, request.signal, options),
     {
       headers: {
         "content-type": "text/event-stream; charset=utf-8",
@@ -27,35 +31,77 @@ const handleHotReloadEventRequest = (
     },
   );
 
+const handleRemoteEventRequest = (
+  request: Request,
+  options: PreviewHandlerOptions,
+): Response => {
+  let close: (() => void) | undefined;
+  return new Response(
+    new ReadableStream({
+      start() {
+        options.onEventStreamOpen?.();
+        close = () => options.onEventStreamClose?.();
+        request.signal.addEventListener("abort", close, { once: true });
+      },
+      cancel() {
+        if (close) {
+          request.signal.removeEventListener("abort", close);
+          close();
+          close = undefined;
+        }
+      },
+    }),
+    {
+      headers: {
+        "content-type": "text/event-stream; charset=utf-8",
+        "cache-control": "no-store",
+        "connection": "keep-alive",
+      },
+    },
+  );
+};
+
 export const createPreviewHandler = (
-  filePath: string,
+  input: string | PreviewSource,
   options: PreviewHandlerOptions = {},
 ): Deno.ServeHandler =>
 async (request) => {
-  const resolvedFilePath = resolve(filePath);
+  const previewSource = typeof input === "string"
+    ? createPreviewSource(input)
+    : input;
   try {
     const requestUrl = new URL(request.url);
     const { pathname } = requestUrl;
 
     if (pathname === "/__sadoku/events") {
-      return handleHotReloadEventRequest(resolvedFilePath, request, options);
+      if (previewSource.isRemote) {
+        return handleRemoteEventRequest(request, options);
+      }
+      return handleHotReloadEventRequest(
+        previewSource.documentSource,
+        request,
+        options,
+      );
     }
 
     if (pathname === "/__sadoku/document") {
-      return await handlePreviewDocumentRequest(resolvedFilePath);
+      return await handlePreviewDocumentRequest(previewSource.documentSource);
     }
 
     if (pathname.startsWith("/__sadoku/comments")) {
-      return await handleCommentsRequest(request, resolvedFilePath, pathname);
+      return await handleCommentsRequest(request, previewSource, pathname);
     }
 
     if (pathname.startsWith("/assets/")) {
       return await handlePreviewAssetRequest(pathname);
     }
 
-    return new Response(renderSpaShell(basename(resolvedFilePath)), {
-      headers: { "content-type": "text/html; charset=utf-8" },
-    });
+    return new Response(
+      renderSpaShell(sourceTitle(previewSource.documentSource)),
+      {
+        headers: { "content-type": "text/html; charset=utf-8" },
+      },
+    );
   } catch (error) {
     if (error instanceof Response) return error;
     const message = error instanceof Error ? error.message : String(error);

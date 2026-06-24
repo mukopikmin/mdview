@@ -4,6 +4,7 @@ import type {
   PreviewCommentsDocument,
 } from "./types.ts";
 import { basename, join } from "@std/path";
+import { readConfig } from "../../config.ts";
 
 const commentsDirectoryName = "sadoku";
 const legacyCommentsDirectoryName = "mdview";
@@ -26,7 +27,7 @@ const getEnv = (name: string): string | undefined => {
   } catch (error) {
     if (error instanceof Deno.errors.PermissionDenied) {
       throw new Error(
-        `Cannot determine comments directory without environment access. Allow HOME, XDG_DATA_HOME, APPDATA, SADOKU_COMMENTS_DIR, and MDVIEW_COMMENTS_DIR.`,
+        `Cannot determine comments directory without environment access. Allow HOME, XDG_CONFIG_HOME, XDG_DATA_HOME, APPDATA, SADOKU_COMMENTS_DIR, and MDVIEW_COMMENTS_DIR.`,
       );
     }
     throw error;
@@ -64,9 +65,14 @@ const getDefaultCommentsDirectoryPath = (directoryName: string): string => {
 };
 
 export const getCommentsDirectoryPath = (): string => {
-  const configuredDirectory = getEnv("SADOKU_COMMENTS_DIR") ??
-    getEnv("MDVIEW_COMMENTS_DIR");
+  const configuredDirectory = getEnv("SADOKU_COMMENTS_DIR");
   if (configuredDirectory) return configuredDirectory;
+
+  const config = readConfig();
+  if (config?.commentsDirectory) return config.commentsDirectory;
+
+  const legacyConfiguredDirectory = getEnv("MDVIEW_COMMENTS_DIR");
+  if (legacyConfiguredDirectory) return legacyConfiguredDirectory;
 
   return getDefaultCommentsDirectoryPath(commentsDirectoryName);
 };
