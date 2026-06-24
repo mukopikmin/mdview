@@ -58,6 +58,31 @@ export const previewThemeCss = `
         font-weight: 600;
       }
 
+      .reload-notice {
+        display: inline-flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin-left: 8px;
+        color: #9a6700;
+      }
+
+      .reload-notice button {
+        border: 1px solid #d29922;
+        border-radius: 6px;
+        padding: 4px 8px;
+        background: var(--color-canvas);
+        color: #9a6700;
+        cursor: pointer;
+        font: inherit;
+      }
+
+      .reload-notice button:hover,
+      .reload-notice button:focus-visible {
+        border-color: var(--color-accent);
+        color: var(--color-accent);
+      }
+
       .preview-nav {
         display: flex;
         flex-wrap: wrap;

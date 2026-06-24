@@ -45,9 +45,12 @@ const loadPreviewDocument = async (): Promise<PreviewDocument> => {
 export const App = () => {
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [view, setView] = useState<View>("preview");
+  const [reloadAvailable, setReloadAvailable] = useState(false);
 
   useEffect(() => {
-    return connectHotReload();
+    return connectHotReload({
+      onReloadAvailable: () => setReloadAvailable(true),
+    });
   }, []);
 
   useEffect(() => {
@@ -239,8 +242,18 @@ export const App = () => {
         <header>
           <div>
             Previewing{" "}
-            <a href={state.document.fileUrl}>{state.document.title}</a>. Refresh
-            to reload changes.
+            <a href={state.document.fileUrl}>{state.document.title}</a>.
+            {reloadAvailable && (
+              <span className="reload-notice" role="status">
+                Source changes are available.
+                <button
+                  onClick={() => globalThis.location.reload()}
+                  type="button"
+                >
+                  Reload preview
+                </button>
+              </span>
+            )}
           </div>
           <nav className="preview-nav" aria-label="Preview views">
             <button
