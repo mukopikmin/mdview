@@ -14,6 +14,7 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeHighlight from "rehype-highlight";
 import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
+import { submitCommentOnShortcut } from "./commentShortcuts";
 import { CommentItem } from "./CommentItem";
 import type { PreviewComment } from "./comments";
 
@@ -93,7 +94,7 @@ const CommentableBlock = ({
 
   const handleCreate = async () => {
     const body = draft.trim();
-    if (!body) return;
+    if (!body || isSaving) return;
     setIsSaving(true);
     setError(undefined);
     try {
@@ -143,8 +144,13 @@ const CommentableBlock = ({
           {isAdding && (
             <div className="comment-form">
               <textarea
+                autoFocus
                 className="comment-input"
                 onChange={(event) => setDraft(event.target.value)}
+                onKeyDown={(event) =>
+                  submitCommentOnShortcut(event, () => {
+                    void handleCreate();
+                  })}
                 placeholder="Write a GitHub PR comment..."
                 value={draft}
               />

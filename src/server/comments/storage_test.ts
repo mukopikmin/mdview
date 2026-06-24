@@ -1,7 +1,10 @@
 import { assertEquals, assertRejects } from "@std/assert";
+import { dirname, join } from "@std/path";
 
+import { getConfigFilePath } from "../../config.ts";
 import type { PreviewCommentsDocument } from "./types.ts";
 import {
+  getCommentsDirectoryPath,
   getCommentsFilePath,
   getLegacyCommentsFilePath,
   readCommentsDocument,
@@ -12,6 +15,59 @@ import {
   removeTempMarkdown,
   withTempCommentsDirectory,
 } from "../test_helpers.ts";
+
+const trackedDirectoryEnvironmentNames = [
+  "APPDATA",
+  "HOME",
+  "XDG_CONFIG_HOME",
+  "XDG_DATA_HOME",
+] as const;
+
+const withCommentsDirectoryEnvironment = async (
+  run: (root: string) => Promise<void>,
+): Promise<void> => {
+  const previous = new Map(
+    trackedDirectoryEnvironmentNames.map((name) => [name, Deno.env.get(name)]),
+  );
+  const root = await Deno.makeTempDir({ prefix: "mdview-config-" });
+
+  Deno.env.set("APPDATA", join(root, "appdata"));
+  Deno.env.set("HOME", join(root, "home"));
+  Deno.env.set("XDG_CONFIG_HOME", join(root, "config"));
+  Deno.env.set("XDG_DATA_HOME", join(root, "data"));
+
+  try {
+    await run(root);
+  } finally {
+    for (const [name, value] of previous) {
+      if (value === undefined) {
+        Deno.env.delete(name);
+      } else {
+        Deno.env.set(name, value);
+      }
+    }
+    await Deno.remove(root, { recursive: true }).catch(() => {});
+  }
+};
+
+const writeMdviewConfig = async (commentsDirectory: string): Promise<void> => {
+  const configFilePath = getConfigFilePath();
+  if (!configFilePath) throw new Error("Expected config file path.");
+  await Deno.mkdir(dirname(configFilePath), { recursive: true });
+  await Deno.writeTextFile(
+    configFilePath,
+    `commentsDirectory = ${JSON.stringify(commentsDirectory)}\n`,
+  );
+};
+
+Deno.test("uses comments directory from config", async () => {
+  await withCommentsDirectoryEnvironment(async (root) => {
+    const commentsDirectory = join(root, "configured-comments");
+    await writeMdviewConfig(commentsDirectory);
+
+    assertEquals(getCommentsDirectoryPath(), commentsDirectory);
+  });
+});
 
 Deno.test("returns an empty comments document when storage does not exist", async () => {
   await withTempCommentsDirectory(async () => {

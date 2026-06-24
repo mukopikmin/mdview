@@ -83,8 +83,23 @@ also reloads automatically when a local Markdown file changes.
 By default, the server stops after the browser tab is closed. Use `--keep-alive`
 when you want to leave the server running.
 
-Comments are stored separately from the Markdown file so they do not appear as
-repository changes.
+Comments are stored outside the Markdown file's directory so they do not appear
+as repository changes. The default comments directory is:
+
+- macOS: `~/Library/Application Support/sadoku/comments`
+- Linux: `$XDG_DATA_HOME/sadoku/comments`, or `~/.local/share/sadoku/comments`
+- Windows: `%APPDATA%\sadoku\comments`
+
+Set `commentsDirectory` in the Sadoku config file to choose a different comments
+directory:
+
+- macOS and Linux: `$XDG_CONFIG_HOME/sadoku/config.toml`, or
+  `~/.config/sadoku/config.toml`
+- Windows: `%APPDATA%\sadoku\config.toml`
+
+```toml
+commentsDirectory = "/path/to/sadoku/comments"
+```
 
 For URL previews, comments are keyed by the URL without its query string or
 fragment. The full URL is still used to fetch Markdown, so temporary tokens can

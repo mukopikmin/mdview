@@ -53,7 +53,7 @@ const version = parseVersion(Deno.args);
 const targetArgs = target ? ["--target", target] : [];
 const originalVersionSource = await Deno.readTextFile(versionPath);
 
-const command = new Deno.Command(Deno.execPath(), {
+const command = new Deno.Command("deno", {
   args: [
     "compile",
     "--node-modules-dir=none",
@@ -62,7 +62,7 @@ const command = new Deno.Command(Deno.execPath(), {
     "--allow-write",
     "--allow-net",
     "--allow-run",
-    "--allow-env=BROWSER,HOME,XDG_DATA_HOME,APPDATA,SADOKU_COMMENTS_DIR,MDVIEW_COMMENTS_DIR",
+    "--allow-env=BROWSER,HOME,XDG_CONFIG_HOME,XDG_DATA_HOME,APPDATA,SADOKU_COMMENTS_DIR,MDVIEW_COMMENTS_DIR",
     "--include",
     "src/preview/dist",
     ...targetArgs,
