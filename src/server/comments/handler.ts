@@ -1,7 +1,7 @@
 import type { PreviewComment, PreviewCommentReply } from "./types.ts";
 import type { PreviewSource } from "../source.ts";
 import {
-  getLineText,
+  getLineRangeText,
   hashSourceText,
   readResolvedCommentsDocument,
   resolveCommentPosition,
@@ -47,6 +47,22 @@ const parseCommentLine = (value: unknown): number => {
   return line;
 };
 
+const parseCommentEndLine = (value: unknown, line: number): number => {
+  if (typeof value !== "object" || value === null) return line;
+  const endLine = (value as { endLine?: unknown }).endLine;
+  if (endLine === undefined) return line;
+  if (
+    typeof endLine !== "number" || !Number.isInteger(endLine) ||
+    endLine < line
+  ) {
+    throw textResponse(
+      "Comment endLine must be an integer greater than or equal to line.",
+      400,
+    );
+  }
+  return endLine;
+};
+
 const createCommentResponse = (comment: PreviewComment): Response =>
   noStoreJson(comment);
 
@@ -78,18 +94,21 @@ const createComment = async (
 ): Promise<Response> => {
   const body = await parseJsonBody(request);
   const line = parseCommentLine(body);
+  const endLine = parseCommentEndLine(body, line);
   const commentBody = parseCommentBody(body);
   const markdown = await readMarkdownSource(source.documentSource);
-  const sourceText = getLineText(markdown, line);
+  const sourceText = getLineRangeText(markdown, line, endLine);
   if (sourceText === undefined) {
-    throw textResponse("Comment line does not exist.", 400);
+    throw textResponse("Comment range does not exist.", 400);
   }
   const now = new Date().toISOString();
   const comment: PreviewComment = {
     body: commentBody,
     createdAt: now,
+    endLine,
     id: crypto.randomUUID(),
     line,
+    originalEndLine: endLine,
     originalLine: line,
     replies: [],
     resolved: false,

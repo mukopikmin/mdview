@@ -17,11 +17,19 @@ export type CommentListProps = {
 };
 
 const formatLineLabel = (comment: PreviewComment): string => {
-  if (comment.stale) return `Originally line ${comment.originalLine}`;
+  const endLine = comment.endLine ?? comment.line;
+  const originalEndLine = comment.originalEndLine ?? comment.originalLine;
+  const currentLabel = comment.line === endLine
+    ? `Line ${comment.line}`
+    : `Lines ${comment.line}-${endLine}`;
+  const originalLabel = comment.originalLine === originalEndLine
+    ? `line ${comment.originalLine}`
+    : `lines ${comment.originalLine}-${originalEndLine}`;
+  if (comment.stale) return `Originally ${originalLabel}`;
   if (comment.originalLine !== comment.line) {
-    return `Line ${comment.line} (originally ${comment.originalLine})`;
+    return `${currentLabel} (originally ${originalLabel})`;
   }
-  return `Line ${comment.line}`;
+  return currentLabel;
 };
 
 type CommentSectionProps =

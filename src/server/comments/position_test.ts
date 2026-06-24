@@ -2,6 +2,7 @@ import { assertEquals } from "@std/assert";
 
 import type { PreviewComment } from "./types.ts";
 import {
+  getLineRangeText,
   getLineText,
   hashSourceText,
   resolveCommentPosition,
@@ -29,6 +30,13 @@ Deno.test("gets Markdown lines using one-based line numbers", () => {
   assertEquals(getLineText("first\nsecond\n", 3), "");
   assertEquals(getLineText("first\nsecond\n", 4), undefined);
   assertEquals(getLineText("first\nsecond\n", 0), undefined);
+});
+
+Deno.test("gets Markdown line ranges using one-based line numbers", () => {
+  assertEquals(getLineRangeText("first\nsecond\nthird", 1, 2), "first\nsecond");
+  assertEquals(getLineRangeText("first\nsecond\nthird", 2, 2), "second");
+  assertEquals(getLineRangeText("first\nsecond\nthird", 2, 4), undefined);
+  assertEquals(getLineRangeText("first\nsecond\nthird", 3, 2), undefined);
 });
 
 Deno.test("produces stable source hashes", () => {
@@ -60,6 +68,29 @@ Deno.test("tracks a uniquely matching source line within forty lines", () => {
   assertEquals(resolved.displayLine, 41);
   assertEquals(resolved.line, 41);
   assertEquals(resolved.originalLine, 1);
+  assertEquals(resolved.stale, false);
+});
+
+Deno.test("tracks a uniquely matching source range within forty lines", () => {
+  const before = Array.from({ length: 5 }, (_, index) => `before ${index}`);
+  const markdown = [...before, "First", "Second", "after"].join("\n");
+  const resolved = resolveCommentPosition(
+    createComment({
+      endLine: 2,
+      line: 1,
+      originalEndLine: 2,
+      originalLine: 1,
+      sourceHash: hashSourceText("First\nSecond"),
+      sourceText: "First\nSecond",
+    }),
+    markdown,
+  );
+
+  assertEquals(resolved.displayLine, 6);
+  assertEquals(resolved.line, 6);
+  assertEquals(resolved.endLine, 7);
+  assertEquals(resolved.originalLine, 1);
+  assertEquals(resolved.originalEndLine, 2);
   assertEquals(resolved.stale, false);
 });
 

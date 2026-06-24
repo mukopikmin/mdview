@@ -1,4 +1,10 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { PreviewComment } from "../comments";
 import { MarkdownPreview } from "../MarkdownPreview";
@@ -9,6 +15,11 @@ const renderMarkdown = (
   markdown: string,
   comments: PreviewComment[] = [],
   callbacks: Partial<{
+    onCreateComment: (
+      line: number,
+      body: string,
+      endLine?: number,
+    ) => Promise<void>;
     onResolveComment: (id: string) => Promise<void>;
   }> = {},
 ) => {
@@ -16,7 +27,7 @@ const renderMarkdown = (
     <MarkdownPreview
       comments={comments}
       markdown={markdown}
-      onCreateComment={async () => {}}
+      onCreateComment={callbacks.onCreateComment ?? (async () => {})}
       onDeleteComment={async () => {}}
       onDeleteReply={async () => {}}
       onReplyComment={async () => {}}
@@ -283,6 +294,40 @@ Body
 
     await waitFor(() =>
       expect(onResolveComment).toHaveBeenCalledWith("comment-1")
+    );
+  });
+
+  it("creates comments for the selected source line range", async () => {
+    const onCreateComment = vi.fn(async () => {});
+    const { container } = renderMarkdown("# Title\n\nBody\n", [], {
+      onCreateComment,
+    });
+    const title = container.querySelector('[data-source-line="1"] h1');
+    const body = container.querySelector('[data-source-line="3"] p');
+    if (!title?.firstChild || !body?.firstChild) {
+      throw new Error("Expected selectable Markdown nodes.");
+    }
+    const range = document.createRange();
+    range.setStart(title.firstChild, 0);
+    range.setEnd(body.firstChild, body.textContent?.length ?? 0);
+    const selection = globalThis.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+
+    fireEvent.click(screen.getByRole("button", {
+      name: "Add comment on line 3",
+    }));
+    fireEvent.change(screen.getByRole("textbox"), {
+      target: { value: "Review this range." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Add comment" }));
+
+    await waitFor(() =>
+      expect(onCreateComment).toHaveBeenCalledWith(
+        1,
+        "Review this range.",
+        3,
+      )
     );
   });
 });

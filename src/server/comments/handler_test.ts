@@ -56,7 +56,16 @@ testWithTempComments("validates comment creation input", async () => {
     },
     {
       body: JSON.stringify({ line: 99, body: "text" }),
-      expected: "Comment line does not exist.",
+      expected: "Comment range does not exist.",
+    },
+    {
+      body: JSON.stringify({ line: 3, endLine: 2, body: "text" }),
+      expected:
+        "Comment endLine must be an integer greater than or equal to line.",
+    },
+    {
+      body: JSON.stringify({ line: 3, endLine: 99, body: "text" }),
+      expected: "Comment range does not exist.",
     },
   ];
 
@@ -79,6 +88,36 @@ testWithTempComments("validates comment creation input", async () => {
       );
       assertEquals(await response.text(), testCase.expected);
     }
+  } finally {
+    await removeTempMarkdown(filePath);
+  }
+});
+
+testWithTempComments("stores line ranges for created comments", async () => {
+  const filePath = await createTempMarkdown();
+  const handler = createPreviewHandler(filePath);
+  try {
+    const response = await requestComments(
+      handler,
+      "/__sadoku/comments",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          body: "Review this range.",
+          endLine: 4,
+          line: 3,
+        }),
+      },
+    );
+    const comment = await response.json();
+
+    assertEquals(response.status, 200);
+    assertEquals(comment.line, 3);
+    assertEquals(comment.endLine, 4);
+    assertEquals(comment.originalLine, 3);
+    assertEquals(comment.originalEndLine, 4);
+    assertEquals(comment.sourceText, "Body\n");
   } finally {
     await removeTempMarkdown(filePath);
   }

@@ -9,8 +9,10 @@ export type PreviewComment = {
   body: string;
   createdAt: string;
   displayLine?: number;
+  endLine?: number;
   id: string;
   line: number;
+  originalEndLine?: number;
   originalLine: number;
   replies?: PreviewCommentReply[];
   resolved: boolean;

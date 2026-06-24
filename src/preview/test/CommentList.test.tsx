@@ -72,6 +72,40 @@ describe("CommentList", () => {
     expect(screen.getByText("Old body")).not.toBeNull();
   });
 
+  it("formats line ranges", () => {
+    render(
+      <CommentList
+        comments={[
+          createComment({
+            endLine: 5,
+            id: "range",
+            line: 3,
+            originalEndLine: 5,
+            originalLine: 3,
+          }),
+          createComment({
+            endLine: 8,
+            id: "moved-range",
+            line: 7,
+            originalEndLine: 4,
+            originalLine: 3,
+          }),
+        ]}
+        onDeleteComment={async () => {}}
+        onDeleteReply={async () => {}}
+        onReplyComment={async () => {}}
+        onReopenComment={async () => {}}
+        onResolveComment={async () => {}}
+        onUpdateComment={async () => {}}
+        onUpdateReply={async () => {}}
+      />,
+    );
+
+    expect(screen.getByText("Lines 3-5")).not.toBeNull();
+    expect(screen.getByText("Lines 7-8 (originally lines 3-4)")).not
+      .toBeNull();
+  });
+
   it("updates and deletes comments", async () => {
     const onDeleteComment = vi.fn(async () => {});
     const onReopenComment = vi.fn(async () => {});
