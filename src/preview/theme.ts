@@ -397,10 +397,9 @@ export const previewThemeCss = `
 
       .comment-line-button {
         box-sizing: border-box;
-        display: inline-flex;
-        align-items: center;
-        justify-content: flex-end;
-        width: 34px;
+        display: inline-grid;
+        place-items: center;
+        width: 24px;
         height: 24px;
         border: 1px solid var(--color-border);
         border-radius: 6px;
@@ -408,12 +407,9 @@ export const previewThemeCss = `
         color: var(--color-text-muted);
         cursor: pointer;
         font: inherit;
-        font-size: 0.75rem;
-        font-variant-numeric: tabular-nums;
+        font-size: 1rem;
         line-height: 1;
         opacity: 0.65;
-        padding: 0 7px 0 0;
-        text-align: right;
       }
 
       .commentable-block:hover .comment-line-button,
@@ -429,7 +425,7 @@ export const previewThemeCss = `
       }
 
       .comment-line-button::before {
-        content: attr(data-line-number);
+        content: "+";
       }
 
       .commentable-block-selected .comment-line-button {
