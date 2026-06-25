@@ -462,6 +462,14 @@ export const previewThemeCss = `
         padding: 3px 8px;
       }
 
+      .commentable-list-item > .commentable-content {
+        margin-left: -1.5em;
+      }
+
+      .commentable-list-item > .commentable-content > .comment-markdown-body {
+        padding-left: 1.5em;
+      }
+
       .comment-thread {
         margin: -6px 0 12px var(--comment-line-gutter-width);
         border-left: 3px solid var(--color-accent);
@@ -769,6 +777,14 @@ export const previewThemeCss = `
         .comment-line-button {
           margin: 0 0 6px;
           opacity: 1;
+        }
+
+        .commentable-list-item > .commentable-content {
+          margin-left: 0;
+        }
+
+        .commentable-list-item > .commentable-content > .comment-markdown-body {
+          padding-left: 0;
         }
 
         .comment-item-header {
