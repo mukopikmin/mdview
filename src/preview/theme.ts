@@ -386,6 +386,10 @@ export const previewThemeCss = `
         background: color-mix(in srgb, var(--color-accent) 8%, transparent);
       }
 
+      .commentable-block-selected > .commentable-content::before {
+        background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+      }
+
       .commentable-block:hover > .commentable-content::before,
       .commentable-block:focus-within > .commentable-content::before {
         background: color-mix(in srgb, var(--color-accent) 14%, transparent);
@@ -422,6 +426,28 @@ export const previewThemeCss = `
 
       .comment-line-button::before {
         content: "+";
+      }
+
+      .commentable-block-selected .comment-line-button {
+        border-color: var(--color-accent);
+        color: var(--color-accent);
+        opacity: 1;
+      }
+
+      .comment-selection-button {
+        position: absolute;
+        z-index: 1;
+        top: 0;
+        right: 0;
+        border: 1px solid var(--color-accent);
+        border-radius: 6px;
+        background: var(--color-accent);
+        color: #ffffff;
+        cursor: pointer;
+        font: inherit;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 3px 8px;
       }
 
       .commentable-list-item > .commentable-content > .comment-line-gutter {

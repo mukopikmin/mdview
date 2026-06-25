@@ -297,54 +297,45 @@ Body
     );
   });
 
-  it("toggles a single-line comment form", () => {
+  it("shows and clears a single-line comment selection", () => {
     renderMarkdown("# Title\n\nBody\n");
 
     fireEvent.click(screen.getByRole("button", {
       name: "Add comment on line 3",
     }));
 
-    expect(screen.getByText(/Commenting on line 3/)).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Add comment" })).not.toBeNull();
 
     fireEvent.click(screen.getByRole("button", {
       name: "Add comment on line 3",
     }));
 
-    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Add comment" })).toBeNull();
   });
 
-  it("creates comments for a selected source line range", async () => {
+  it("creates comments for a selected line range", async () => {
     const onCreateComment = vi.fn(async () => {});
-    const { container } = renderMarkdown("# Title\n\nBody\n", [], {
-      onCreateComment,
-    });
-    const title = container.querySelector('[data-source-line="1"] h1');
-    const body = container.querySelector('[data-source-line="3"] p');
-    if (!title?.firstChild || !body?.firstChild) {
-      throw new Error("Expected selectable Markdown nodes.");
-    }
-    const range = document.createRange();
-    range.setStart(title.firstChild, 0);
-    range.setEnd(body.firstChild, body.textContent?.length ?? 0);
-    const selection = globalThis.getSelection();
-    selection?.removeAllRanges();
-    selection?.addRange(range);
+    renderMarkdown("# Title\n\nBody\n", [], { onCreateComment });
+
+    fireEvent.click(screen.getByRole("button", {
+      name: "Add comment on line 1",
+    }));
 
     fireEvent.click(screen.getByRole("button", {
       name: "Add comment on line 3",
     }));
-    selection?.removeAllRanges();
 
+    fireEvent.click(screen.getByRole("button", { name: "Add comment" }));
     expect(screen.getByText(/Commenting on lines 1-3/)).not.toBeNull();
     fireEvent.change(screen.getByRole("textbox"), {
-      target: { value: "Review this range." },
+      target: { value: "Review this line range." },
     });
     fireEvent.click(screen.getByRole("button", { name: "Add comment" }));
 
     await waitFor(() =>
       expect(onCreateComment).toHaveBeenCalledWith(
         1,
-        "Review this range.",
+        "Review this line range.",
         3,
       )
     );
