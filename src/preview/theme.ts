@@ -364,7 +364,7 @@ export const previewThemeCss = `
       .comment-line-gutter {
         position: absolute;
         top: 0.1rem;
-        left: -42px;
+        left: -34px;
       }
 
       .comment-markdown-body {
@@ -448,6 +448,10 @@ export const previewThemeCss = `
         font-size: 0.75rem;
         font-weight: 600;
         padding: 3px 8px;
+      }
+
+      .commentable-list-item > .commentable-content > .comment-line-gutter {
+        left: calc(-34px - 2em);
       }
 
       .comment-thread {
