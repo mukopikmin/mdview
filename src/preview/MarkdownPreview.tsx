@@ -42,9 +42,6 @@ const trimFinalNewline = (value: string): string => value.replace(/\n$/, "");
 const SourceLineContext = createContext<ReadonlySet<number>>(new Set());
 
 type SourcePosition = {
-  end?: {
-    line?: number;
-  };
   start?: {
     line?: number;
   };
@@ -58,7 +55,6 @@ type CommentableBlockProps = {
   children: React.ReactNode;
   className?: string;
   comments: PreviewComment[];
-  endLine?: number;
   line: number;
   onCreateComment: (
     line: number,
@@ -81,13 +77,17 @@ const getSourceLine = (props: { node?: SourceNode }): number | undefined => {
   return props.node?.position?.start?.line;
 };
 
-const getSourceEndLine = (props: { node?: SourceNode }): number | undefined => {
-  return props.node?.position?.end?.line;
-};
+type CommentRange = { endLine: number; line: number };
 
-const getSelectedCommentRange = ():
-  | { endLine: number; line: number }
-  | undefined => {
+const isLineInRange = (line: number, range: CommentRange): boolean =>
+  line >= range.line && line <= range.endLine;
+
+const formatRangeLabel = (range: CommentRange): string =>
+  range.line === range.endLine
+    ? `line ${range.line}`
+    : `lines ${range.line}-${range.endLine}`;
+
+const getSelectedCommentRange = (): CommentRange | undefined => {
   const selection = globalThis.getSelection?.();
   if (!selection || selection.isCollapsed || selection.rangeCount === 0) {
     return undefined;
@@ -112,7 +112,6 @@ const CommentableBlock = ({
   children,
   className,
   comments,
-  endLine = line,
   line,
   onCreateComment,
   onDeleteComment,
@@ -125,6 +124,10 @@ const CommentableBlock = ({
   const [draft, setDraft] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [pendingRange, setPendingRange] = useState<CommentRange>({
+    endLine: line,
+    line,
+  });
   const [error, setError] = useState<string>();
   const ancestorSourceLines = useContext(SourceLineContext);
   const sourceLines = useMemo(() => {
@@ -137,23 +140,31 @@ const CommentableBlock = ({
     setIsSaving(true);
     setError(undefined);
     try {
-      const selectedRange = getSelectedCommentRange();
-      const targetLine = selectedRange && line >= selectedRange.line &&
-          line <= selectedRange.endLine
-        ? selectedRange.line
-        : line;
-      const targetEndLine = selectedRange && line >= selectedRange.line &&
-          line <= selectedRange.endLine
-        ? selectedRange.endLine
-        : line;
-      await onCreateComment(targetLine, body, targetEndLine);
+      await onCreateComment(pendingRange.line, body, pendingRange.endLine);
       setDraft("");
       setIsAdding(false);
+      setPendingRange({ endLine: line, line });
     } catch (error) {
       setError(error instanceof Error ? error.message : String(error));
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleToggleAdding = () => {
+    setIsAdding((value) => {
+      if (value) {
+        setPendingRange({ endLine: line, line });
+        return false;
+      }
+      const selectedRange = getSelectedCommentRange();
+      setPendingRange(
+        selectedRange && isLineInRange(line, selectedRange)
+          ? selectedRange
+          : { endLine: line, line },
+      );
+      return true;
+    });
   };
 
   return (
@@ -165,8 +176,8 @@ const CommentableBlock = ({
         <button
           aria-label={`Add comment on line ${line}`}
           className="comment-line-button"
-          onClick={() => setIsAdding((value) => !value)}
-          title={`Comment on line ${line}`}
+          onClick={handleToggleAdding}
+          title={`Comment on line ${line}; select text across lines first to comment on a range`}
           type="button"
         >
         </button>
@@ -193,6 +204,11 @@ const CommentableBlock = ({
           ))}
           {isAdding && (
             <div className="comment-form">
+              <div className="comment-range-hint">
+                Commenting on{" "}
+                {formatRangeLabel(pendingRange)}. Select text across lines
+                before pressing a line comment button to comment on a range.
+              </div>
               <textarea
                 className="comment-input"
                 onChange={(event) => setDraft(event.target.value)}
@@ -209,7 +225,10 @@ const CommentableBlock = ({
                 </button>
                 <button
                   disabled={isSaving}
-                  onClick={() => setIsAdding(false)}
+                  onClick={() => {
+                    setPendingRange({ endLine: line, line });
+                    setIsAdding(false);
+                  }}
                   type="button"
                 >
                   Cancel
@@ -264,7 +283,6 @@ const createCommentableComponent = (
   return ({ children, node, ...elementProps }: ComponentProps) => {
     const ancestorSourceLines = useContext(SourceLineContext);
     const line = getSourceLine({ node });
-    const endLine = getSourceEndLine({ node }) ?? line;
     const element = createElement(tagName, elementProps, children);
     if (line === undefined) return element;
     if (ancestorSourceLines.has(line)) return element;
@@ -272,7 +290,6 @@ const createCommentableComponent = (
     return (
       <CommentableBlock
         comments={commentsByLine.get(line) ?? []}
-        endLine={endLine}
         line={line}
         onCreateComment={props.onCreateComment}
         onDeleteComment={props.onDeleteComment}
@@ -304,7 +321,6 @@ const createCommentableListItem = (
   return ({ children, node, ...elementProps }: ComponentProps) => {
     const ancestorSourceLines = useContext(SourceLineContext);
     const line = getSourceLine({ node });
-    const endLine = getSourceEndLine({ node }) ?? line;
     if (line === undefined) return <li {...elementProps}>{children}</li>;
     if (ancestorSourceLines.has(line)) {
       return <li {...elementProps}>{children}</li>;
@@ -315,7 +331,6 @@ const createCommentableListItem = (
         <CommentableBlock
           className="commentable-list-item"
           comments={commentsByLine.get(line) ?? []}
-          endLine={endLine}
           line={line}
           onCreateComment={props.onCreateComment}
           onDeleteComment={props.onDeleteComment}
@@ -348,7 +363,6 @@ const createCommentablePre = (
   return ({ children, node, ...elementProps }: ComponentProps) => {
     const ancestorSourceLines = useContext(SourceLineContext);
     const line = getSourceLine({ node });
-    const endLine = getSourceEndLine({ node }) ?? line;
     const mermaidCode = getMermaidCodeText(children);
     const element = mermaidCode === undefined
       ? <pre {...elementProps}>{children}</pre>
@@ -371,7 +385,6 @@ const createCommentablePre = (
     return (
       <CommentableBlock
         comments={commentsByLine.get(line) ?? []}
-        endLine={endLine}
         line={line}
         onCreateComment={props.onCreateComment}
         onDeleteComment={props.onDeleteComment}

@@ -317,6 +317,9 @@ Body
     fireEvent.click(screen.getByRole("button", {
       name: "Add comment on line 3",
     }));
+    selection?.removeAllRanges();
+
+    expect(screen.getByText(/Commenting on lines 1-3/)).not.toBeNull();
     fireEvent.change(screen.getByRole("textbox"), {
       target: { value: "Review this range." },
     });
