@@ -356,27 +356,19 @@ export const previewThemeCss = `
         background: var(--color-border);
       }
 
-      .commentable-block {
-        --comment-line-gutter-width: 42px;
-      }
-
       .commentable-content {
-        display: grid;
-        grid-template-columns: var(--comment-line-gutter-width) minmax(0, 1fr);
-        column-gap: 8px;
         isolation: isolate;
         position: relative;
       }
 
       .comment-line-gutter {
-        display: flex;
-        justify-content: flex-end;
-        padding-top: 0.1rem;
+        position: absolute;
+        top: 0.1rem;
+        left: -42px;
       }
 
       .comment-markdown-body {
-        min-width: 0;
-        position: relative;
+        display: contents;
       }
 
       .commentable-content::before {
@@ -462,16 +454,8 @@ export const previewThemeCss = `
         padding: 3px 8px;
       }
 
-      .commentable-list-item > .commentable-content {
-        margin-left: -1.5em;
-      }
-
-      .commentable-list-item > .commentable-content > .comment-markdown-body {
-        padding-left: 1.5em;
-      }
-
       .comment-thread {
-        margin: -6px 0 12px var(--comment-line-gutter-width);
+        margin: -6px 0 12px;
         border-left: 3px solid var(--color-accent);
         padding: 6px 0 1px 10px;
       }
@@ -765,26 +749,13 @@ export const previewThemeCss = `
           flex-direction: column;
         }
 
-        .commentable-content {
-          grid-template-columns: 1fr;
-        }
-
         .comment-line-gutter {
-          justify-content: flex-start;
-          padding-top: 0;
+          position: static;
         }
 
         .comment-line-button {
           margin: 0 0 6px;
           opacity: 1;
-        }
-
-        .commentable-list-item > .commentable-content {
-          margin-left: 0;
-        }
-
-        .commentable-list-item > .commentable-content > .comment-markdown-body {
-          padding-left: 0;
         }
 
         .comment-item-header {
