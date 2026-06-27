@@ -112,7 +112,7 @@ List stored comment files:
 sadoku comments list
 ```
 
-Inspect unresolved comments for a Markdown file as JSON:
+Inspect unresolved comments for a Markdown source as JSON:
 
 ```sh
 sadoku comments inspect README.md
@@ -134,7 +134,7 @@ The list shows each stored comment file, the target Markdown path, comment
 count, unresolved comment count, and the latest `updatedAt` value from the
 stored comments.
 
-Remove all stored comments for a Markdown file:
+Remove all stored comments for a Markdown source:
 
 ```sh
 sadoku comments rm README.md

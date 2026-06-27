@@ -263,6 +263,79 @@ Deno.test("adds replies to comments", async () => {
   });
 });
 
+Deno.test("operates on URL comments by URL without query string or fragment", async () => {
+  await withTempCommentsDirectory(async () => {
+    const server = Deno.serve(
+      { hostname: "127.0.0.1", port: 0, onListen: () => {} },
+      (request) => {
+        const url = new URL(request.url);
+        return new Response(
+          `# Remote ${url.searchParams.get("token")}\nBody\n`,
+        );
+      },
+    );
+    const baseUrl = `http://127.0.0.1:${server.addr.port}/remote.md`;
+
+    try {
+      await writeCommentsDocument(baseUrl, {
+        comments: [
+          {
+            body: "URL comment",
+            createdAt: "2026-06-08T13:00:00.000Z",
+            id: "comment-1",
+            line: 1,
+            originalLine: 1,
+            resolved: false,
+            sourceText: "# Remote a",
+            stale: false,
+            updatedAt: "2026-06-08T13:00:00.000Z",
+          },
+          {
+            body: "Resolve me",
+            createdAt: "2026-06-08T13:00:00.000Z",
+            id: "comment-2",
+            line: 2,
+            originalLine: 2,
+            resolved: false,
+            sourceText: "Body",
+            stale: false,
+            updatedAt: "2026-06-08T13:00:00.000Z",
+          },
+        ],
+        filePath: baseUrl,
+      });
+
+      const inspected = await inspectComments(`${baseUrl}?token=a#section`);
+      assertEquals(inspected.filePath, baseUrl);
+      assertEquals(inspected.comments.length, 2);
+      assertEquals(inspected.comments[0].stale, false);
+
+      const replied = await replyToComment(
+        `${baseUrl}?token=a`,
+        "comment-1",
+        "  URL reply.  ",
+      );
+      assertEquals(replied.replies?.[0].body, "URL reply.");
+
+      const resolved = await resolveComments(`${baseUrl}?token=b`, [
+        "comment-2",
+      ]);
+      assertEquals(resolved.filePath, baseUrl);
+      assertEquals(resolved.comments[0].resolved, true);
+      assertEquals(
+        (await inspectComments(`${baseUrl}?token=a`)).comments.length,
+        1,
+      );
+
+      assertEquals(await removeComments(`${baseUrl}?token=c`), baseUrl);
+      assertEquals((await listCommentFiles()).entries, []);
+    } finally {
+      await server.shutdown().catch(() => {});
+      await server.finished.catch(() => {});
+    }
+  });
+});
+
 Deno.test("removes comments for the specified Markdown file", async () => {
   await withTempCommentsDirectory(async () => {
     const filePath = await createTempMarkdown();

@@ -30,11 +30,11 @@ export class CliUsageError extends Error {
 
 export const usage = `Usage:
   sadoku <file.md|url> [--port <port>] [--host <host>] [--no-open] [--keep-alive]
-  sadoku comments inspect <file.md>
-  sadoku comments reply <file.md> <comment-id> <body>
-  sadoku comments resolve <file.md> <comment-id>...
+  sadoku comments inspect <file.md|url>
+  sadoku comments reply <file.md|url> <comment-id> <body>
+  sadoku comments resolve <file.md|url> <comment-id>...
   sadoku comments list
-  sadoku comments rm <file.md> [--force]
+  sadoku comments rm <file.md|url> [--force]
 
 Options:
   -p, --port   Starting port to bind. Defaults to 3334.
