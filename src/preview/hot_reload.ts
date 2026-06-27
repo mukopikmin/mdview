@@ -2,22 +2,22 @@ type EventSourceConstructor = new (url: string) => EventSource;
 
 export type HotReloadOptions = {
   EventSourceCtor?: EventSourceConstructor;
-  reload?: () => void;
+  onReloadAvailable?: () => void;
 };
 
 export const connectHotReload = (
   {
     EventSourceCtor = globalThis.EventSource,
-    reload = () => globalThis.location.reload(),
+    onReloadAvailable = () => {},
   }: HotReloadOptions = {},
 ): () => void => {
   const events = new EventSourceCtor("/__sadoku/events");
-  const reloadPage = () => reload();
+  const notifyReloadAvailable = () => onReloadAvailable();
 
-  events.addEventListener("reload", reloadPage);
+  events.addEventListener("reload", notifyReloadAvailable);
 
   return () => {
-    events.removeEventListener("reload", reloadPage);
+    events.removeEventListener("reload", notifyReloadAvailable);
     events.close();
   };
 };

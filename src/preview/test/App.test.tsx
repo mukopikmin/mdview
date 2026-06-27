@@ -13,14 +13,20 @@ vi.mock("../mermaid", () => ({
   initializeMermaid: vi.fn(async () => {}),
 }));
 
-class TestEventSource {
-  addEventListener() {}
+class TestEventSource extends EventTarget {
+  static instances: TestEventSource[] = [];
+
+  constructor() {
+    super();
+    TestEventSource.instances.push(this);
+  }
+
   close() {}
-  removeEventListener() {}
 }
 
 afterEach(() => {
   cleanup();
+  TestEventSource.instances = [];
   vi.mocked(initializeMermaid).mockClear();
   vi.unstubAllGlobals();
 });
@@ -57,6 +63,50 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: "Preview" }));
 
     await waitFor(() => expect(initializeMermaid).toHaveBeenCalledTimes(2));
+  });
+
+  it("shows a reload button when source changes are available", async () => {
+    const reload = vi.fn();
+    vi.stubGlobal("EventSource", TestEventSource);
+    vi.stubGlobal("location", { reload });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url === "/__sadoku/document") {
+          return Promise.resolve(Response.json({
+            fileUrl: "file:///tmp/example.md",
+            markdown: "# Title\n\nBody\n",
+            title: "example.md",
+          }));
+        }
+        if (url === "/__sadoku/comments") {
+          return Promise.resolve(Response.json({
+            comments: [],
+            filePath: "/tmp/example.md",
+          }));
+        }
+        return Promise.resolve(new Response("Not found.", { status: 404 }));
+      }),
+    );
+
+    render(<App />);
+
+    await screen.findByRole("link", { name: "example.md" });
+
+    expect(screen.queryByRole("button", { name: "Reload preview" })).toBeNull();
+
+    TestEventSource.instances.at(-1)?.dispatchEvent(new Event("reload"));
+
+    const reloadButton = await screen.findByRole("button", {
+      name: "Reload preview",
+    });
+    expect(screen.getByText("Source changes are available.")).not.toBeNull();
+    expect(reload).not.toHaveBeenCalled();
+
+    fireEvent.click(reloadButton);
+
+    expect(reload).toHaveBeenCalledTimes(1);
   });
 
   it("shows stale comments only in the comments view", async () => {

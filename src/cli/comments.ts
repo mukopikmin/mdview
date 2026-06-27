@@ -1,4 +1,4 @@
-import { basename, join, resolve } from "@std/path";
+import { basename, join } from "@std/path";
 import {
   getCommentsDirectoryPath,
   getCommentsFilePath,
@@ -14,6 +14,7 @@ import type {
   PreviewCommentReply,
   PreviewCommentsDocument,
 } from "../server/comments/types.ts";
+import { createPreviewSource, readMarkdownSource } from "../server/source.ts";
 
 type StoredComment = {
   resolved?: boolean;
@@ -138,11 +139,14 @@ export const shouldRemoveComments = (answer: string): boolean =>
 export const inspectComments = async (
   filePath: string,
 ): Promise<PreviewCommentsDocument> => {
-  const resolvedFilePath = resolve(filePath);
-  const document = await readResolvedCommentsDocument(resolvedFilePath);
+  const source = createPreviewSource(filePath);
+  const document = await readResolvedCommentsDocument(
+    source.commentSource,
+    source.documentSource,
+  );
   return {
     comments: document.comments.filter((comment) => !comment.resolved),
-    filePath: resolvedFilePath,
+    filePath: source.commentSource,
   };
 };
 
@@ -154,8 +158,8 @@ export const resolveComments = async (
     throw new Error("At least one comment ID is required.");
   }
 
-  const resolvedFilePath = resolve(filePath);
-  const document = await readCommentsDocument(resolvedFilePath);
+  const source = createPreviewSource(filePath);
+  const document = await readCommentsDocument(source.commentSource);
   const requestedIds = new Set(commentIds);
   const knownIds = new Set(document.comments.map((comment) => comment.id));
   const missingIds = [...requestedIds].filter((id) => !knownIds.has(id));
@@ -175,14 +179,14 @@ export const resolveComments = async (
         }
         : comment
     ),
-    filePath: resolvedFilePath,
+    filePath: source.commentSource,
   };
-  await writeCommentsDocument(resolvedFilePath, updatedDocument);
+  await writeCommentsDocument(source.commentSource, updatedDocument);
   return {
     comments: updatedDocument.comments.filter((comment) =>
       requestedIds.has(comment.id)
     ),
-    filePath: resolvedFilePath,
+    filePath: source.commentSource,
   };
 };
 
@@ -196,8 +200,8 @@ export const replyToComment = async (
     throw new Error("Reply body is required.");
   }
 
-  const resolvedFilePath = resolve(filePath);
-  const document = await readCommentsDocument(resolvedFilePath);
+  const source = createPreviewSource(filePath);
+  const document = await readCommentsDocument(source.commentSource);
   const index = document.comments.findIndex((comment) =>
     comment.id === commentId
   );
@@ -219,39 +223,44 @@ export const replyToComment = async (
   };
   const comments = [...document.comments];
   comments[index] = updatedComment;
-  await writeCommentsDocument(resolvedFilePath, {
+  await writeCommentsDocument(source.commentSource, {
     comments,
-    filePath: resolvedFilePath,
+    filePath: source.commentSource,
   });
   return resolveCommentPosition(
     updatedComment,
-    await Deno.readTextFile(resolvedFilePath),
+    await readMarkdownSource(source.documentSource),
   );
 };
 
 export const removeComments = async (filePath: string): Promise<string> => {
-  const resolvedFilePath = resolve(filePath);
-  const fileInfo = await Deno.stat(resolvedFilePath).catch((error) => {
-    if (error instanceof Deno.errors.NotFound) {
-      throw new Error(`Markdown file not found: ${resolvedFilePath}`);
+  const source = createPreviewSource(filePath);
+  if (!source.isRemote) {
+    const fileInfo = await Deno.stat(source.documentSource).catch((error) => {
+      if (error instanceof Deno.errors.NotFound) {
+        throw new Error(`Markdown file not found: ${source.documentSource}`);
+      }
+      throw error;
+    });
+    if (!fileInfo.isFile) {
+      throw new Error(`Markdown path is not a file: ${source.documentSource}`);
     }
-    throw error;
-  });
-  if (!fileInfo.isFile) {
-    throw new Error(`Markdown path is not a file: ${resolvedFilePath}`);
   }
 
-  await Deno.remove(getCommentsFilePath(resolvedFilePath)).catch(
+  await Deno.remove(getCommentsFilePath(source.commentSource)).catch(
     (error) => {
       if (error instanceof Deno.errors.NotFound) {
+        const sourceType = source.isRemote
+          ? "Markdown source"
+          : "Markdown file";
         throw new Error(
-          `Comments not found for Markdown file: ${resolvedFilePath}`,
+          `Comments not found for ${sourceType}: ${source.commentSource}`,
         );
       }
       throw error;
     },
   );
-  return resolvedFilePath;
+  return source.commentSource;
 };
 
 export const removeCommentsIfConfirmed = async (

@@ -77,8 +77,9 @@ sadoku README.md --keep-alive
 ```
 
 By default, the server reads the Markdown file or fetches the Markdown URL again
-on each request, so refreshing the page shows recent edits. The browser preview
-also reloads automatically when a local Markdown file changes.
+on each request, so refreshing the page shows recent edits. When a local
+Markdown file changes, the browser preview shows a reload button so you can
+refresh it when you are ready.
 
 By default, the server stops after the browser tab is closed. Use `--keep-alive`
 when you want to leave the server running.
@@ -111,7 +112,7 @@ List stored comment files:
 sadoku comments list
 ```
 
-Inspect unresolved comments for a Markdown file as JSON:
+Inspect unresolved comments for a Markdown source as JSON:
 
 ```sh
 sadoku comments inspect README.md
@@ -133,7 +134,7 @@ The list shows each stored comment file, the target Markdown path, comment
 count, unresolved comment count, and the latest `updatedAt` value from the
 stored comments.
 
-Remove all stored comments for a Markdown file:
+Remove all stored comments for a Markdown source:
 
 ```sh
 sadoku comments rm README.md

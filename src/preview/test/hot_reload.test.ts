@@ -18,13 +18,13 @@ class FakeEventSource extends EventTarget {
 }
 
 describe("connectHotReload", () => {
-  it("reloads when the server sends a reload event", () => {
+  it("notifies when the server sends a reload event", () => {
     let reloads = 0;
     const disconnect = connectHotReload({
       EventSourceCtor: FakeEventSource as unknown as new (
         url: string,
       ) => EventSource,
-      reload: () => {
+      onReloadAvailable: () => {
         reloads += 1;
       },
     });
