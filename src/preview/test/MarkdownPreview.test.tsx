@@ -234,11 +234,11 @@ Body
   });
 
   it("focuses the comment textarea when opening the comment form", () => {
-    renderMarkdown("# Title\n");
+    const { container } = renderMarkdown("# Title\n");
+    const line = container.querySelector('[data-source-line="1"] h1');
+    expect(line).not.toBeNull();
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Add comment on line 1" }),
-    );
+    fireEvent.click(line!);
     fireEvent.click(screen.getByRole("button", { name: "Add comment" }));
 
     expect(document.activeElement).toBe(
@@ -248,11 +248,17 @@ Body
 
   it("submits a new comment with command or control enter", async () => {
     const onCreateComment = vi.fn(async () => {});
-    renderMarkdown("# Title\n\nBody\n", [], { onCreateComment });
+    const { container } = renderMarkdown("# Title\n\nBody\n", [], {
+      onCreateComment,
+    });
+    const getTitleLine = () =>
+      container.querySelector('[data-source-line="1"] h1');
+    const getBodyLine = () =>
+      container.querySelector('[data-source-line="3"] p');
+    expect(getTitleLine()).not.toBeNull();
+    expect(getBodyLine()).not.toBeNull();
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Add comment on line 1" }),
-    );
+    fireEvent.click(getTitleLine()!);
     fireEvent.click(screen.getByRole("button", { name: "Add comment" }));
     fireEvent.change(
       screen.getByPlaceholderText("Write a GitHub PR comment..."),
@@ -267,9 +273,7 @@ Body
       expect(onCreateComment).toHaveBeenCalledWith(1, "Mac shortcut.", 1)
     );
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Add comment on line 3" }),
-    );
+    fireEvent.click(getBodyLine()!);
     fireEvent.click(screen.getByRole("button", { name: "Add comment" }));
     fireEvent.change(
       screen.getByPlaceholderText("Write a GitHub PR comment..."),
