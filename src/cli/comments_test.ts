@@ -195,7 +195,7 @@ Deno.test("resolves selected comments atomically", async () => {
       assertEquals(resolved.comments[0].resolved, true);
       assertEquals(typeof resolved.comments[0].resolvedAt, "string");
       assertEquals(inspected.comments.map((comment) => comment.id), [
-        "1",
+        1,
       ]);
 
       await assertRejects(
@@ -205,7 +205,7 @@ Deno.test("resolves selected comments atomically", async () => {
       );
       assertEquals(
         (await inspectComments(filePath)).comments.map((comment) => comment.id),
-        ["1"],
+        [1],
       );
     } finally {
       await removeTempMarkdown(filePath);

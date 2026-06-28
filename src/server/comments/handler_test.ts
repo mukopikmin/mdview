@@ -211,7 +211,7 @@ testWithTempComments(
           "/__sadoku/comments/missing/replies/1",
           "Comment not found.",
         ],
-        ["POST", "/__sadoku/comments/missing/unknown", "Not found."],
+        ["POST", "/__sadoku/comments/1/unknown", "Not found."],
         ["GET", "/__sadoku/comments/", "Comment not found."],
       ];
 
@@ -253,7 +253,7 @@ testWithTempComments(
   },
 );
 
-testWithTempComments("accepts URL-encoded comment identifiers", async () => {
+testWithTempComments("accepts numeric comment identifiers", async () => {
   const filePath = await createTempMarkdown();
   const commentsPath = getCommentsFilePath(filePath);
   await Deno.mkdir(dirname(commentsPath), { recursive: true });
@@ -278,7 +278,7 @@ testWithTempComments("accepts URL-encoded comment identifiers", async () => {
   try {
     const response = await requestComments(
       createPreviewHandler(filePath),
-      "/__sadoku/comments/comment%20with%20spaces",
+      "/__sadoku/comments/1",
       {
         method: "PUT",
         headers: { "content-type": "application/json" },

@@ -160,11 +160,15 @@ export const resolveComments = async (
 
   const source = createPreviewSource(filePath);
   const document = await readCommentsDocument(source.commentSource);
-  const requestedIds = new Set(commentIds.map(Number));
+  const requestedIdEntries = commentIds.map((id) => ({
+    input: id,
+    value: Number(id),
+  }));
+  const requestedIds = new Set(requestedIdEntries.map((entry) => entry.value));
   const knownIds = new Set(document.comments.map((comment) => comment.id));
-  const missingIds = [...requestedIds].filter((id) =>
-    Number.isNaN(id) || !knownIds.has(id)
-  );
+  const missingIds = requestedIdEntries
+    .filter((entry) => Number.isNaN(entry.value) || !knownIds.has(entry.value))
+    .map((entry) => entry.input);
   if (missingIds.length > 0) {
     throw new Error(`Comment not found: ${missingIds.join(", ")}`);
   }
