@@ -160,9 +160,11 @@ export const resolveComments = async (
 
   const source = createPreviewSource(filePath);
   const document = await readCommentsDocument(source.commentSource);
-  const requestedIds = new Set(commentIds);
+  const requestedIds = new Set(commentIds.map(Number));
   const knownIds = new Set(document.comments.map((comment) => comment.id));
-  const missingIds = [...requestedIds].filter((id) => !knownIds.has(id));
+  const missingIds = [...requestedIds].filter((id) =>
+    Number.isNaN(id) || !knownIds.has(id)
+  );
   if (missingIds.length > 0) {
     throw new Error(`Comment not found: ${missingIds.join(", ")}`);
   }
@@ -202,8 +204,9 @@ export const replyToComment = async (
 
   const source = createPreviewSource(filePath);
   const document = await readCommentsDocument(source.commentSource);
+  const parsedCommentId = Number(commentId);
   const index = document.comments.findIndex((comment) =>
-    comment.id === commentId
+    comment.id === parsedCommentId
   );
   if (index < 0) {
     throw new Error(`Comment not found: ${commentId}`);
@@ -213,7 +216,10 @@ export const replyToComment = async (
   const reply: PreviewCommentReply = {
     body: replyBody,
     createdAt: now,
-    id: crypto.randomUUID(),
+    id: Math.max(
+      0,
+      ...(document.comments[index].replies ?? []).map((reply) => reply.id),
+    ) + 1,
     updatedAt: now,
   };
   const updatedComment = {

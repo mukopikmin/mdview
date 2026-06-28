@@ -128,11 +128,11 @@ describe("App", () => {
               {
                 body: "Active comment.",
                 createdAt: "2026-06-05T00:00:00.000Z",
-                id: "active",
+                id: 1,
                 line: 3,
                 originalLine: 3,
                 resolved: false,
-                sourceHash: "active",
+                sourceHash: 1,
                 sourceText: "Body",
                 stale: false,
                 updatedAt: "2026-06-05T00:00:00.000Z",
@@ -140,7 +140,7 @@ describe("App", () => {
               {
                 body: "Stale comment.",
                 createdAt: "2026-06-05T00:00:00.000Z",
-                id: "stale",
+                id: 2,
                 line: 5,
                 originalLine: 5,
                 resolved: false,

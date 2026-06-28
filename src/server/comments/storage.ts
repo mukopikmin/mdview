@@ -113,7 +113,7 @@ const createEmptyCommentsDocument = (
 const isPreviewComment = (value: unknown): value is PreviewComment => {
   if (typeof value !== "object" || value === null) return false;
   const comment = value as Partial<PreviewComment>;
-  return typeof comment.id === "string" &&
+  return typeof comment.id === "number" &&
     Number.isInteger(comment.line) &&
     typeof comment.body === "string" &&
     typeof comment.createdAt === "string" &&
@@ -125,7 +125,7 @@ const isPreviewCommentReply = (
 ): value is PreviewCommentReply => {
   if (typeof value !== "object" || value === null) return false;
   const reply = value as Partial<PreviewCommentReply>;
-  return typeof reply.id === "string" &&
+  return typeof reply.id === "number" &&
     typeof reply.body === "string" &&
     typeof reply.createdAt === "string" &&
     typeof reply.updatedAt === "string";

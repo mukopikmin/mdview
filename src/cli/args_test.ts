@@ -91,10 +91,10 @@ Deno.test("parses comments inspect command", () => {
 
 Deno.test("parses comments resolve command", () => {
   assertEquals(
-    parseArgs(["comments", "resolve", "README.md", "comment-1", "comment-2"]),
+    parseArgs(["comments", "resolve", "README.md", "1", "2"]),
     {
       command: "comments-resolve",
-      commentIds: ["comment-1", "comment-2"],
+      commentIds: ["1", "2"],
       file: "README.md",
       force: false,
       host: "127.0.0.1",
@@ -111,14 +111,14 @@ Deno.test("parses comments reply command", () => {
       "comments",
       "reply",
       "README.md",
-      "comment-1",
+      "1",
       "Need",
       "more",
       "details.",
     ]),
     {
       command: "comments-reply",
-      commentId: "comment-1",
+      commentId: "1",
       file: "README.md",
       force: false,
       host: "127.0.0.1",
@@ -217,9 +217,7 @@ Deno.test("throws usage errors for invalid options", () => {
     CliUsageError,
   );
   assertInstanceOf(
-    assertThrows(() =>
-      parseArgs(["comments", "reply", "README.md", "comment-1"])
-    ),
+    assertThrows(() => parseArgs(["comments", "reply", "README.md", "1"])),
     CliUsageError,
   );
 });

@@ -6,15 +6,15 @@ export type CommentItemProps = {
   className?: string;
   comment: PreviewComment;
   lineLabel: string;
-  onDeleteComment: (id: string) => Promise<void>;
-  onDeleteReply: (commentId: string, replyId: string) => Promise<void>;
-  onReplyComment: (id: string, body: string) => Promise<void>;
-  onReopenComment?: (id: string) => Promise<void>;
-  onResolveComment?: (id: string) => Promise<void>;
-  onUpdateComment: (id: string, body: string) => Promise<void>;
+  onDeleteComment: (id: number) => Promise<void>;
+  onDeleteReply: (commentId: number, replyId: number) => Promise<void>;
+  onReplyComment: (id: number, body: string) => Promise<void>;
+  onReopenComment?: (id: number) => Promise<void>;
+  onResolveComment?: (id: number) => Promise<void>;
+  onUpdateComment: (id: number, body: string) => Promise<void>;
   onUpdateReply: (
-    commentId: string,
-    replyId: string,
+    commentId: number,
+    replyId: number,
     body: string,
   ) => Promise<void>;
   showSource?: boolean;
@@ -25,13 +25,13 @@ const getSourceLabel = (comment: PreviewComment): string =>
   comment.stale ? "Original line" : "Target line";
 
 type ReplyItemProps = {
-  commentId: string;
+  commentId: number;
   disabled: boolean;
-  onDelete: (commentId: string, replyId: string) => Promise<void>;
+  onDelete: (commentId: number, replyId: number) => Promise<void>;
   onError: (error: unknown) => void;
   onUpdate: (
-    commentId: string,
-    replyId: string,
+    commentId: number,
+    replyId: number,
     body: string,
   ) => Promise<void>;
   reply: PreviewCommentReply;
