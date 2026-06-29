@@ -16,7 +16,7 @@ const createComment = (
 ): PreviewComment => ({
   body: "Clarify this.",
   createdAt: "2026-06-05T00:00:00.000Z",
-  id: "comment-1",
+  id: 1,
   line: 3,
   originalLine: 3,
   resolved: false,
@@ -32,16 +32,16 @@ describe("CommentList", () => {
     render(
       <CommentList
         comments={[
-          createComment({ body: "Active comment.", id: "active" }),
+          createComment({ body: "Active comment.", id: 1 }),
           createComment({
             body: "Stale comment.",
-            id: "stale",
+            id: 2,
             sourceText: "Old body",
             stale: true,
           }),
           createComment({
             body: "Resolved comment.",
-            id: "resolved",
+            id: 3,
             resolved: true,
           }),
         ]}
@@ -102,15 +102,13 @@ describe("CommentList", () => {
     });
     await waitFor(() =>
       expect(onUpdateComment).toHaveBeenCalledWith(
-        "comment-1",
+        1,
         "Updated body.",
       )
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
-    await waitFor(() =>
-      expect(onDeleteComment).toHaveBeenCalledWith("comment-1")
-    );
+    await waitFor(() => expect(onDeleteComment).toHaveBeenCalledWith(1));
   });
 
   it("shows and creates replies", async () => {
@@ -123,7 +121,7 @@ describe("CommentList", () => {
           replies: [{
             body: "Existing reply.",
             createdAt: "2026-06-05T01:00:00.000Z",
-            id: "reply-1",
+            id: 1,
             updatedAt: "2026-06-05T01:00:00.000Z",
           }],
         })]}
@@ -151,7 +149,7 @@ describe("CommentList", () => {
     });
 
     await waitFor(() =>
-      expect(onReplyComment).toHaveBeenCalledWith("comment-1", "New reply.")
+      expect(onReplyComment).toHaveBeenCalledWith(1, "New reply.")
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Edit reply" }));
@@ -177,16 +175,14 @@ describe("CommentList", () => {
 
     await waitFor(() =>
       expect(onUpdateReply).toHaveBeenCalledWith(
-        "comment-1",
-        "reply-1",
+        1,
+        1,
         "Updated reply.",
       )
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Delete reply" }));
-    await waitFor(() =>
-      expect(onDeleteReply).toHaveBeenCalledWith("comment-1", "reply-1")
-    );
+    await waitFor(() => expect(onDeleteReply).toHaveBeenCalledWith(1, 1));
   });
 
   it("resolves and reopens comments", async () => {
@@ -195,8 +191,8 @@ describe("CommentList", () => {
     render(
       <CommentList
         comments={[
-          createComment({ id: "active" }),
-          createComment({ id: "resolved", resolved: true }),
+          createComment({ id: 1 }),
+          createComment({ id: 3, resolved: true }),
         ]}
         onDeleteComment={async () => {}}
         onDeleteReply={async () => {}}
@@ -209,13 +205,9 @@ describe("CommentList", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Resolve" }));
-    await waitFor(() =>
-      expect(onResolveComment).toHaveBeenCalledWith("active")
-    );
+    await waitFor(() => expect(onResolveComment).toHaveBeenCalledWith(1));
 
     fireEvent.click(screen.getByRole("button", { name: "Reopen" }));
-    await waitFor(() =>
-      expect(onReopenComment).toHaveBeenCalledWith("resolved")
-    );
+    await waitFor(() => expect(onReopenComment).toHaveBeenCalledWith(3));
   });
 });

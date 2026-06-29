@@ -16,7 +16,7 @@ const renderMarkdown = (
   comments: PreviewComment[] = [],
   callbacks: Partial<{
     onCreateComment: (line: number, body: string) => Promise<void>;
-    onResolveComment: (id: string) => Promise<void>;
+    onResolveComment: (id: number) => Promise<void>;
   }> = {},
 ) => {
   const result = render(
@@ -325,7 +325,7 @@ Body
     renderMarkdown("# Title\n\nBody\n", [{
       body: "Clarify this.",
       createdAt: "2026-06-05T00:00:00.000Z",
-      id: "comment-1",
+      id: 1,
       line: 3,
       originalLine: 3,
       resolved: false,
@@ -337,8 +337,6 @@ Body
 
     screen.getByRole("button", { name: "Resolve" }).click();
 
-    await waitFor(() =>
-      expect(onResolveComment).toHaveBeenCalledWith("comment-1")
-    );
+    await waitFor(() => expect(onResolveComment).toHaveBeenCalledWith(1));
   });
 });

@@ -8,6 +8,9 @@ description: Read unresolved Sadoku review comments through the sadoku CLI, appl
 Use the `sadoku` CLI to access review comments. Do not read or modify Sadoku's
 comment storage files directly.
 
+When communicating with the user, use the user's language for replies,
+questions, and the final report.
+
 ## Workflow
 
 1. Identify the target Markdown document.

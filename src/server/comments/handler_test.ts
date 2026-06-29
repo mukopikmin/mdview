@@ -102,7 +102,7 @@ testWithTempComments("trims comment bodies before storing them", async () => {
     assertEquals(response.status, 200);
     assertEquals(response.headers.get("cache-control"), "no-store");
     assertEquals(comment.body, "Review this.");
-    assertMatch(comment.id, /^[0-9a-f-]{36}$/);
+    assertEquals(comment.id, 1);
     assertEquals(comment.createdAt, comment.updatedAt);
   } finally {
     await removeTempMarkdown(filePath);
@@ -138,7 +138,7 @@ testWithTempComments("adds replies to comments", async () => {
     assertEquals(replyResponse.status, 200);
     assertEquals(updatedComment.replies.length, 1);
     assertEquals(updatedComment.replies[0].body, "More context.");
-    assertMatch(updatedComment.replies[0].id, /^[0-9a-f-]{36}$/);
+    assertEquals(updatedComment.replies[0].id, 1);
     const replyId = updatedComment.replies[0].id;
 
     const updateResponse = await requestComments(
@@ -203,15 +203,15 @@ testWithTempComments(
         ["POST", "/__sadoku/comments/missing/replies", "Comment not found."],
         [
           "PUT",
-          "/__sadoku/comments/missing/replies/reply-1",
+          "/__sadoku/comments/missing/replies/1",
           "Comment not found.",
         ],
         [
           "DELETE",
-          "/__sadoku/comments/missing/replies/reply-1",
+          "/__sadoku/comments/missing/replies/1",
           "Comment not found.",
         ],
-        ["POST", "/__sadoku/comments/missing/unknown", "Not found."],
+        ["POST", "/__sadoku/comments/1/unknown", "Not found."],
         ["GET", "/__sadoku/comments/", "Comment not found."],
       ];
 
@@ -241,7 +241,7 @@ testWithTempComments(
     try {
       const response = await requestComments(
         handler,
-        "/__sadoku/comments/comment-1",
+        "/__sadoku/comments/1",
         { method: "PATCH" },
       );
 
@@ -253,7 +253,7 @@ testWithTempComments(
   },
 );
 
-testWithTempComments("accepts URL-encoded comment identifiers", async () => {
+testWithTempComments("accepts numeric comment identifiers", async () => {
   const filePath = await createTempMarkdown();
   const commentsPath = getCommentsFilePath(filePath);
   await Deno.mkdir(dirname(commentsPath), { recursive: true });
@@ -263,7 +263,7 @@ testWithTempComments("accepts URL-encoded comment identifiers", async () => {
       comments: [{
         body: "Original",
         createdAt: "2026-06-07T00:00:00.000Z",
-        id: "comment with spaces",
+        id: 1,
         line: 3,
         originalLine: 3,
         resolved: false,
@@ -278,7 +278,7 @@ testWithTempComments("accepts URL-encoded comment identifiers", async () => {
   try {
     const response = await requestComments(
       createPreviewHandler(filePath),
-      "/__sadoku/comments/comment%20with%20spaces",
+      "/__sadoku/comments/1",
       {
         method: "PUT",
         headers: { "content-type": "application/json" },

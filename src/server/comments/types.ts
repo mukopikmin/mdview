@@ -1,7 +1,7 @@
 export type PreviewCommentReply = {
   body: string;
   createdAt: string;
-  id: string;
+  id: number;
   updatedAt: string;
 };
 
@@ -9,7 +9,7 @@ export type PreviewComment = {
   body: string;
   createdAt: string;
   displayLine?: number;
-  id: string;
+  id: number;
   line: number;
   originalLine: number;
   replies?: PreviewCommentReply[];
