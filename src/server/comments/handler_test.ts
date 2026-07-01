@@ -45,6 +45,13 @@ const createMemoryCommentsStore = (): {
   return {
     documents,
     store: {
+      delete: (filePath) => {
+        if (!documents.delete(filePath)) {
+          return Promise.reject(new Deno.errors.NotFound());
+        }
+        return Promise.resolve();
+      },
+      list: () => Promise.resolve({ entries: [], warnings: [] }),
       read: (filePath) =>
         Promise.resolve(
           cloneDocument(

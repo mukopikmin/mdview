@@ -1,9 +1,7 @@
-import { basename, join } from "@std/path";
 import {
-  getCommentsDirectoryPath,
-  getCommentsFilePath,
-  readCommentsDocument,
-  writeCommentsDocument,
+  type CommentsStore,
+  type CommentsStoreFile,
+  fileCommentsStore,
 } from "../server/comments/storage.ts";
 import {
   readResolvedCommentsDocument,
@@ -16,98 +14,23 @@ import type {
 } from "../server/comments/types.ts";
 import { createPreviewSource, readMarkdownSource } from "../server/source.ts";
 
-type StoredComment = {
-  resolved?: boolean;
-  updatedAt: string;
-};
-
-type StoredCommentsDocument = {
-  comments: StoredComment[];
-  filePath: string;
-};
-
-export type ListedCommentFile = {
-  commentCount: number;
-  fileName: string;
-  markdownPath: string;
-  openCount: number;
-  updatedAt: string | undefined;
-};
-
 export type ListCommentFilesResult = {
   entries: ListedCommentFile[];
   warnings: string[];
 };
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
+export type ListedCommentFile = CommentsStoreFile;
 
-const isStoredComment = (value: unknown): value is StoredComment =>
-  isRecord(value) && typeof value.updatedAt === "string";
-
-const parseStoredCommentsDocument = (
-  text: string,
-): StoredCommentsDocument => {
-  const value = JSON.parse(text) as unknown;
-  if (!isRecord(value) || !Array.isArray(value.comments)) {
-    throw new Error("Invalid comments document.");
-  }
-
-  return {
-    comments: value.comments.filter(isStoredComment),
-    filePath: typeof value.filePath === "string" ? value.filePath : "",
-  };
+export type CommentsCliOptions = {
+  commentsStore?: CommentsStore;
 };
 
-const latestUpdatedAt = (
-  comments: StoredComment[],
-): string | undefined =>
-  comments.map((comment) => comment.updatedAt).sort().at(-1);
+const getCommentsStore = (options: CommentsCliOptions): CommentsStore =>
+  options.commentsStore ?? fileCommentsStore;
 
-export const listCommentFiles = async (): Promise<ListCommentFilesResult> => {
-  const commentsDirectoryPath = getCommentsDirectoryPath();
-  const directoryEntries = await Array.fromAsync(
-    Deno.readDir(commentsDirectoryPath),
-  ).catch((error) => {
-    if (error instanceof Deno.errors.NotFound) return [];
-    throw error;
-  });
-  const entries: ListedCommentFile[] = [];
-  const warnings: string[] = [];
-
-  for (const entry of directoryEntries) {
-    if (!entry.isFile || !entry.name.endsWith(".json")) continue;
-
-    const filePath = join(commentsDirectoryPath, entry.name);
-    try {
-      const document = parseStoredCommentsDocument(
-        await Deno.readTextFile(filePath),
-      );
-      entries.push({
-        commentCount: document.comments.length,
-        fileName: basename(filePath),
-        markdownPath: document.filePath,
-        openCount: document.comments.filter((comment) =>
-          comment.resolved !== true
-        ).length,
-        updatedAt: latestUpdatedAt(document.comments),
-      });
-    } catch (error) {
-      warnings.push(
-        `Skipping ${entry.name}: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
-    }
-  }
-
-  return {
-    entries: entries.sort((left, right) =>
-      left.fileName.localeCompare(right.fileName)
-    ),
-    warnings,
-  };
-};
+export const listCommentFiles = async (
+  options: CommentsCliOptions = {},
+): Promise<ListCommentFilesResult> => await getCommentsStore(options).list();
 
 const pad = (value: string, width: number): string => value.padEnd(width, " ");
 
@@ -138,11 +61,13 @@ export const shouldRemoveComments = (answer: string): boolean =>
 
 export const inspectComments = async (
   filePath: string,
+  options: CommentsCliOptions = {},
 ): Promise<PreviewCommentsDocument> => {
   const source = createPreviewSource(filePath);
   const document = await readResolvedCommentsDocument(
     source.commentSource,
     source.documentSource,
+    getCommentsStore(options),
   );
   return {
     comments: document.comments.filter((comment) => !comment.resolved),
@@ -153,13 +78,15 @@ export const inspectComments = async (
 export const resolveComments = async (
   filePath: string,
   commentIds: string[],
+  options: CommentsCliOptions = {},
 ): Promise<PreviewCommentsDocument> => {
   if (commentIds.length === 0) {
     throw new Error("At least one comment ID is required.");
   }
 
   const source = createPreviewSource(filePath);
-  const document = await readCommentsDocument(source.commentSource);
+  const commentsStore = getCommentsStore(options);
+  const document = await commentsStore.read(source.commentSource);
   const requestedIdEntries = commentIds.map((id) => ({
     input: id,
     value: Number(id),
@@ -187,7 +114,7 @@ export const resolveComments = async (
     ),
     filePath: source.commentSource,
   };
-  await writeCommentsDocument(source.commentSource, updatedDocument);
+  await commentsStore.write(source.commentSource, updatedDocument);
   return {
     comments: updatedDocument.comments.filter((comment) =>
       requestedIds.has(comment.id)
@@ -200,6 +127,7 @@ export const replyToComment = async (
   filePath: string,
   commentId: string,
   body: string,
+  options: CommentsCliOptions = {},
 ): Promise<PreviewComment> => {
   const replyBody = body.trim();
   if (replyBody === "") {
@@ -207,7 +135,8 @@ export const replyToComment = async (
   }
 
   const source = createPreviewSource(filePath);
-  const document = await readCommentsDocument(source.commentSource);
+  const commentsStore = getCommentsStore(options);
+  const document = await commentsStore.read(source.commentSource);
   const parsedCommentId = Number(commentId);
   const index = document.comments.findIndex((comment) =>
     comment.id === parsedCommentId
@@ -233,7 +162,7 @@ export const replyToComment = async (
   };
   const comments = [...document.comments];
   comments[index] = updatedComment;
-  await writeCommentsDocument(source.commentSource, {
+  await commentsStore.write(source.commentSource, {
     comments,
     filePath: source.commentSource,
   });
@@ -243,7 +172,10 @@ export const replyToComment = async (
   );
 };
 
-export const removeComments = async (filePath: string): Promise<string> => {
+export const removeComments = async (
+  filePath: string,
+  options: CommentsCliOptions = {},
+): Promise<string> => {
   const source = createPreviewSource(filePath);
   if (!source.isRemote) {
     const fileInfo = await Deno.stat(source.documentSource).catch((error) => {
@@ -257,7 +189,7 @@ export const removeComments = async (filePath: string): Promise<string> => {
     }
   }
 
-  await Deno.remove(getCommentsFilePath(source.commentSource)).catch(
+  await getCommentsStore(options).delete(source.commentSource).catch(
     (error) => {
       if (error instanceof Deno.errors.NotFound) {
         const sourceType = source.isRemote
@@ -276,5 +208,8 @@ export const removeComments = async (filePath: string): Promise<string> => {
 export const removeCommentsIfConfirmed = async (
   filePath: string,
   answer: string,
+  options: CommentsCliOptions = {},
 ): Promise<string | undefined> =>
-  shouldRemoveComments(answer) ? await removeComments(filePath) : undefined;
+  shouldRemoveComments(answer)
+    ? await removeComments(filePath, options)
+    : undefined;
