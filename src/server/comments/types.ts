@@ -11,7 +11,9 @@ export type PreviewComment = {
   displayLine?: number;
   id: number;
   line: number;
+  endLine: number;
   originalLine: number;
+  originalEndLine: number;
   replies?: PreviewCommentReply[];
   resolved: boolean;
   resolvedAt?: string;

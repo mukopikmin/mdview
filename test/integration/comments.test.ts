@@ -34,8 +34,10 @@ Deno.test("stores preview comments in the configured comments directory", async 
       const createdComment = await createResponse.json();
       assertEquals(createResponse.status, 200);
       assertEquals(createdComment.line, 3);
+      assertEquals(createdComment.endLine, 3);
       assertEquals(createdComment.body, "Clarify this.");
       assertEquals(createdComment.originalLine, 3);
+      assertEquals(createdComment.originalEndLine, 3);
       assertEquals(createdComment.replies, []);
       assertEquals(createdComment.resolved, false);
       assertEquals(createdComment.resolvedAt, undefined);
@@ -69,6 +71,53 @@ Deno.test("stores preview comments in the configured comments directory", async 
       const storedText = await Deno.readTextFile(getCommentsFilePath(filePath));
       const storedDocument = JSON.parse(storedText);
       assertEquals(storedDocument.comments, []);
+    } finally {
+      await Deno.remove(filePath).catch(() => {});
+      await Deno.remove(getCommentsFilePath(filePath)).catch(() => {});
+    }
+  });
+});
+
+Deno.test("preserves preview comment range metadata across reloads", async () => {
+  await withTempCommentsDirectory(async () => {
+    const filePath = await Deno.makeTempFile({
+      prefix: "mdview-",
+      suffix: ".md",
+    });
+    await Deno.writeTextFile(filePath, "one\ntwo\nthree\nfour\n");
+    try {
+      const handler = createPreviewHandler(filePath);
+      const createResponse = await handler(
+        new Request("http://127.0.0.1:3334/__sadoku/comments", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ line: 2, endLine: 4, body: "Range note." }),
+        }),
+        {} as Deno.ServeHandlerInfo<Deno.NetAddr>,
+      );
+      const createdComment = await createResponse.json();
+      assertEquals(createResponse.status, 200);
+      assertEquals(createdComment.line, 2);
+      assertEquals(createdComment.endLine, 4);
+      assertEquals(createdComment.originalLine, 2);
+      assertEquals(createdComment.originalEndLine, 4);
+      assertEquals(createdComment.sourceText, "two\nthree\nfour");
+
+      const reloadResponse = await handler(
+        new Request("http://127.0.0.1:3334/__sadoku/comments"),
+        {} as Deno.ServeHandlerInfo<Deno.NetAddr>,
+      );
+      const reloadedDocument = await reloadResponse.json();
+      assertEquals(reloadedDocument.comments[0].endLine, 4);
+      assertEquals(reloadedDocument.comments[0].originalEndLine, 4);
+      assertEquals(reloadedDocument.comments[0].sourceText, "two\nthree\nfour");
+
+      const storedDocument = JSON.parse(
+        await Deno.readTextFile(getCommentsFilePath(filePath)),
+      );
+      assertEquals(storedDocument.comments[0].endLine, 4);
+      assertEquals(storedDocument.comments[0].originalEndLine, 4);
+      assertEquals(storedDocument.comments[0].sourceText, "two\nthree\nfour");
     } finally {
       await Deno.remove(filePath).catch(() => {});
       await Deno.remove(getCommentsFilePath(filePath)).catch(() => {});

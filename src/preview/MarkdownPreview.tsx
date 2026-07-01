@@ -21,7 +21,11 @@ import type { PreviewComment } from "./comments";
 export type MarkdownPreviewProps = {
   comments: PreviewComment[];
   markdown: string;
-  onCreateComment: (line: number, body: string) => Promise<void>;
+  onCreateComment: (
+    line: number,
+    body: string,
+    endLine?: number,
+  ) => Promise<void>;
   onDeleteComment: (id: number) => Promise<void>;
   onDeleteReply: (commentId: number, replyId: number) => Promise<void>;
   onReplyComment: (id: number, body: string) => Promise<void>;
@@ -39,6 +43,9 @@ const trimFinalNewline = (value: string): string => value.replace(/\n$/, "");
 const SourceLineContext = createContext<ReadonlySet<number>>(new Set());
 
 type SourcePosition = {
+  end?: {
+    line?: number;
+  };
   start?: {
     line?: number;
   };
@@ -53,7 +60,12 @@ type CommentableBlockProps = {
   className?: string;
   comments: PreviewComment[];
   line: number;
-  onCreateComment: (line: number, body: string) => Promise<void>;
+  endLine?: number;
+  onCreateComment: (
+    line: number,
+    body: string,
+    endLine?: number,
+  ) => Promise<void>;
   onDeleteComment: (id: number) => Promise<void>;
   onDeleteReply: (commentId: number, replyId: number) => Promise<void>;
   onReplyComment: (id: number, body: string) => Promise<void>;
@@ -70,11 +82,39 @@ const getSourceLine = (props: { node?: SourceNode }): number | undefined => {
   return props.node?.position?.start?.line;
 };
 
+const getSourceEndLine = (props: { node?: SourceNode }): number | undefined => {
+  return props.node?.position?.end?.line;
+};
+
+const getSelectedCommentRange = ():
+  | { endLine: number; line: number }
+  | undefined => {
+  const selection = globalThis.getSelection?.();
+  if (!selection || selection.isCollapsed || selection.rangeCount === 0) {
+    return undefined;
+  }
+  const range = selection.getRangeAt(0);
+  const lines: number[] = [];
+  const collectLine = (node: Node | null) => {
+    const element = node instanceof Element ? node : node?.parentElement;
+    const block = element?.closest<HTMLElement>("[data-source-line]");
+    const value = block?.dataset.sourceLine;
+    if (value === undefined) return;
+    const line = Number(value);
+    if (Number.isInteger(line) && line >= 1) lines.push(line);
+  };
+  collectLine(range.startContainer);
+  collectLine(range.endContainer);
+  if (lines.length === 0) return undefined;
+  return { endLine: Math.max(...lines), line: Math.min(...lines) };
+};
+
 const CommentableBlock = ({
   children,
   className,
   comments,
   line,
+  endLine = line,
   onCreateComment,
   onDeleteComment,
   onDeleteReply,
@@ -98,7 +138,16 @@ const CommentableBlock = ({
     setIsSaving(true);
     setError(undefined);
     try {
-      await onCreateComment(line, body);
+      const selectedRange = getSelectedCommentRange();
+      const targetLine = selectedRange && line >= selectedRange.line &&
+          line <= selectedRange.endLine
+        ? selectedRange.line
+        : line;
+      const targetEndLine = selectedRange && line >= selectedRange.line &&
+          line <= selectedRange.endLine
+        ? selectedRange.endLine
+        : line;
+      await onCreateComment(targetLine, body, targetEndLine);
       setDraft("");
       setIsAdding(false);
     } catch (error) {
@@ -132,7 +181,9 @@ const CommentableBlock = ({
             <CommentItem
               comment={comment}
               key={comment.id}
-              lineLabel={`Line ${line}`}
+              lineLabel={comment.line === (comment.endLine ?? comment.line)
+                ? `Line ${comment.line}`
+                : `Lines ${comment.line}-${comment.endLine}`}
               onDeleteComment={onDeleteComment}
               onDeleteReply={onDeleteReply}
               onReplyComment={onReplyComment}
@@ -219,6 +270,7 @@ const createCommentableComponent = (
   return ({ children, node, ...elementProps }: ComponentProps) => {
     const ancestorSourceLines = useContext(SourceLineContext);
     const line = getSourceLine({ node });
+    const endLine = getSourceEndLine({ node }) ?? line;
     const element = createElement(tagName, elementProps, children);
     if (line === undefined) return element;
     if (ancestorSourceLines.has(line)) return element;
@@ -227,6 +279,7 @@ const createCommentableComponent = (
       <CommentableBlock
         comments={commentsByLine.get(line) ?? []}
         line={line}
+        endLine={endLine}
         onCreateComment={props.onCreateComment}
         onDeleteComment={props.onDeleteComment}
         onDeleteReply={props.onDeleteReply}
@@ -257,6 +310,7 @@ const createCommentableListItem = (
   return ({ children, node, ...elementProps }: ComponentProps) => {
     const ancestorSourceLines = useContext(SourceLineContext);
     const line = getSourceLine({ node });
+    const endLine = getSourceEndLine({ node }) ?? line;
     if (line === undefined) return <li {...elementProps}>{children}</li>;
     if (ancestorSourceLines.has(line)) {
       return <li {...elementProps}>{children}</li>;
@@ -268,6 +322,7 @@ const createCommentableListItem = (
           className="commentable-list-item"
           comments={commentsByLine.get(line) ?? []}
           line={line}
+          endLine={endLine}
           onCreateComment={props.onCreateComment}
           onDeleteComment={props.onDeleteComment}
           onDeleteReply={props.onDeleteReply}
@@ -299,6 +354,7 @@ const createCommentablePre = (
   return ({ children, node, ...elementProps }: ComponentProps) => {
     const ancestorSourceLines = useContext(SourceLineContext);
     const line = getSourceLine({ node });
+    const endLine = getSourceEndLine({ node }) ?? line;
     const mermaidCode = getMermaidCodeText(children);
     const element = mermaidCode === undefined
       ? <pre {...elementProps}>{children}</pre>
@@ -322,6 +378,7 @@ const createCommentablePre = (
       <CommentableBlock
         comments={commentsByLine.get(line) ?? []}
         line={line}
+        endLine={endLine}
         onCreateComment={props.onCreateComment}
         onDeleteComment={props.onDeleteComment}
         onDeleteReply={props.onDeleteReply}
@@ -350,10 +407,13 @@ export const MarkdownPreview = ({
   const commentsByLine = useMemo(() => {
     const grouped = new Map<number, PreviewComment[]>();
     for (const comment of comments) {
-      grouped.set(comment.line, [
-        ...(grouped.get(comment.line) ?? []),
-        comment,
-      ]);
+      const endLine = comment.endLine ?? comment.line;
+      for (let line = comment.line; line <= endLine; line += 1) {
+        grouped.set(line, [
+          ...(grouped.get(line) ?? []),
+          comment,
+        ]);
+      }
     }
     return grouped;
   }, [comments]);

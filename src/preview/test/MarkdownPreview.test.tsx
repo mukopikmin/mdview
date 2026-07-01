@@ -15,7 +15,11 @@ const renderMarkdown = (
   markdown: string,
   comments: PreviewComment[] = [],
   callbacks: Partial<{
-    onCreateComment: (line: number, body: string) => Promise<void>;
+    onCreateComment: (
+      line: number,
+      body: string,
+      endLine?: number,
+    ) => Promise<void>;
     onResolveComment: (id: number) => Promise<void>;
   }> = {},
 ) => {
@@ -264,7 +268,7 @@ Body
     );
 
     await waitFor(() =>
-      expect(onCreateComment).toHaveBeenCalledWith(1, "Mac shortcut.")
+      expect(onCreateComment).toHaveBeenCalledWith(1, "Mac shortcut.", 1)
     );
 
     fireEvent.click(
@@ -280,7 +284,7 @@ Body
     );
 
     await waitFor(() =>
-      expect(onCreateComment).toHaveBeenCalledWith(3, "Control shortcut.")
+      expect(onCreateComment).toHaveBeenCalledWith(3, "Control shortcut.", 3)
     );
   });
 
@@ -320,6 +324,26 @@ Body
     ).toHaveLength(1);
   });
 
+  it("shows range comments on every covered preview line", () => {
+    renderMarkdown("# Title\n\nBody\n\nTail\n", [{
+      body: "Range comment.",
+      createdAt: "2026-06-05T00:00:00.000Z",
+      id: 1,
+      line: 1,
+      endLine: 3,
+      originalLine: 1,
+      originalEndLine: 3,
+      resolved: false,
+      sourceHash: "example",
+      sourceText: "# Title\n\nBody",
+      stale: false,
+      updatedAt: "2026-06-05T00:00:00.000Z",
+    }]);
+
+    expect(screen.getAllByText("Lines 1-3")).toHaveLength(2);
+    expect(screen.getAllByText("Range comment.")).toHaveLength(2);
+  });
+
   it("resolves inline comments from the preview", async () => {
     const onResolveComment = vi.fn(async () => {});
     renderMarkdown("# Title\n\nBody\n", [{
@@ -327,7 +351,9 @@ Body
       createdAt: "2026-06-05T00:00:00.000Z",
       id: 1,
       line: 3,
+      endLine: 3,
       originalLine: 3,
+      originalEndLine: 3,
       resolved: false,
       sourceHash: "example",
       sourceText: "Body",

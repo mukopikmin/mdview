@@ -1,7 +1,7 @@
 import type { PreviewComment, PreviewCommentReply } from "./types.ts";
 import type { PreviewSource } from "../source.ts";
 import {
-  getLineText,
+  getLineRangeText,
   hashSourceText,
   readResolvedCommentsDocument,
   resolveCommentPosition,
@@ -36,15 +36,34 @@ const parseCommentBody = (value: unknown): string => {
   return body.trim();
 };
 
-const parseCommentLine = (value: unknown): number => {
+const parsePositiveInteger = (value: unknown, name: string): number => {
+  if (typeof value !== "number" || !Number.isInteger(value) || value < 1) {
+    throw textResponse(`${name} must be a positive integer.`, 400);
+  }
+  return value;
+};
+
+const parseCommentRange = (
+  value: unknown,
+): { endLine: number; line: number } => {
   if (typeof value !== "object" || value === null) {
     throw textResponse("Comment line is required.", 400);
   }
-  const line = (value as { line?: unknown }).line;
-  if (typeof line !== "number" || !Number.isInteger(line) || line < 1) {
-    throw textResponse("Comment line must be a positive integer.", 400);
+  const { endLine: rawEndLine, line: rawLine } = value as {
+    endLine?: unknown;
+    line?: unknown;
+  };
+  const line = parsePositiveInteger(rawLine, "Comment line");
+  const endLine = rawEndLine === undefined
+    ? line
+    : parsePositiveInteger(rawEndLine, "Comment endLine");
+  if (line > endLine) {
+    throw textResponse(
+      "Comment line must be less than or equal to endLine.",
+      400,
+    );
   }
-  return line;
+  return { endLine, line };
 };
 
 const createCommentResponse = (comment: PreviewComment): Response =>
@@ -82,12 +101,12 @@ const createComment = async (
   commentsStore: CommentsStore,
 ): Promise<Response> => {
   const body = await parseJsonBody(request);
-  const line = parseCommentLine(body);
+  const { endLine, line } = parseCommentRange(body);
   const commentBody = parseCommentBody(body);
   const markdown = await readMarkdownSource(source.documentSource);
-  const sourceText = getLineText(markdown, line);
+  const sourceText = getLineRangeText(markdown, line, endLine);
   if (sourceText === undefined) {
-    throw textResponse("Comment line does not exist.", 400);
+    throw textResponse("Comment range does not exist.", 400);
   }
   const document = await commentsStore.read(source.commentSource);
   const now = new Date().toISOString();
@@ -96,7 +115,9 @@ const createComment = async (
     createdAt: now,
     id: getNextId(document.comments.map((comment) => comment.id)),
     line,
+    endLine,
     originalLine: line,
+    originalEndLine: endLine,
     replies: [],
     resolved: false,
     sourceHash: hashSourceText(sourceText),

@@ -167,6 +167,9 @@ const isPreviewCommentReply = (
     typeof reply.updatedAt === "string";
 };
 
+const isPositiveInteger = (value: unknown): value is number =>
+  typeof value === "number" && Number.isInteger(value) && value >= 1;
+
 const isStoredComment = (value: unknown): value is StoredComment =>
   isRecord(value) && typeof value.updatedAt === "string";
 
@@ -189,13 +192,35 @@ const latestUpdatedAt = (
 ): string | undefined =>
   comments.map((comment) => comment.updatedAt).sort().at(-1);
 
-const normalizePreviewComment = (comment: PreviewComment): PreviewComment => ({
-  ...comment,
-  replies: Array.isArray(comment.replies)
-    ? comment.replies.filter(isPreviewCommentReply)
-    : [],
-  resolved: comment.resolved === true,
-});
+const normalizePreviewComment = (comment: PreviewComment): PreviewComment => {
+  const line = isPositiveInteger(comment.line) ? comment.line : 1;
+  const rawEndLine = (comment as Partial<PreviewComment>).endLine;
+  const endLine = isPositiveInteger(rawEndLine) && rawEndLine >= line
+    ? rawEndLine
+    : line;
+  const rawOriginalLine = (comment as Partial<PreviewComment>).originalLine;
+  const originalLine = isPositiveInteger(rawOriginalLine)
+    ? rawOriginalLine
+    : line;
+  const rawOriginalEndLine =
+    (comment as Partial<PreviewComment>).originalEndLine;
+  const originalEndLine = isPositiveInteger(rawOriginalEndLine) &&
+      rawOriginalEndLine >= originalLine
+    ? rawOriginalEndLine
+    : (isPositiveInteger(rawOriginalLine) ? originalLine : endLine);
+
+  return {
+    ...comment,
+    line,
+    endLine,
+    originalLine,
+    originalEndLine,
+    replies: Array.isArray(comment.replies)
+      ? comment.replies.filter(isPreviewCommentReply)
+      : [],
+    resolved: comment.resolved === true,
+  };
+};
 
 export const readCommentsDocument = async (
   filePath: string,
