@@ -13,15 +13,74 @@ import {
   shouldRemoveComments,
 } from "./comments.ts";
 import {
+  type CommentsStore,
+  type CommentsStoreFile,
   getCommentsDirectoryPath,
   getCommentsFilePath,
   writeCommentsDocument,
 } from "../server/comments/storage.ts";
+import type { PreviewCommentsDocument } from "../server/comments/types.ts";
 import {
   createTempMarkdown,
   removeTempMarkdown,
   withTempCommentsDirectory,
 } from "../server/test_helpers.ts";
+
+const createMemoryCommentsStore = (): {
+  documents: Map<string, PreviewCommentsDocument>;
+  store: CommentsStore;
+} => {
+  const documents = new Map<string, PreviewCommentsDocument>();
+  const cloneDocument = (
+    document: PreviewCommentsDocument,
+  ): PreviewCommentsDocument => structuredClone(document);
+  const latestUpdatedAt = (document: PreviewCommentsDocument) =>
+    document.comments.map((comment) => comment.updatedAt).sort().at(-1);
+
+  return {
+    documents,
+    store: {
+      delete: (filePath) => {
+        if (!documents.delete(filePath)) {
+          return Promise.reject(new Deno.errors.NotFound());
+        }
+        return Promise.resolve();
+      },
+      list: () => {
+        const entries: CommentsStoreFile[] = [...documents.entries()].map(
+          ([filePath, document]) => ({
+            commentCount: document.comments.length,
+            fileName: `${filePath}.memory`,
+            markdownPath: document.filePath,
+            openCount:
+              document.comments.filter((comment) => comment.resolved !== true)
+                .length,
+            updatedAt: latestUpdatedAt(document),
+          }),
+        );
+        entries.sort((left, right) =>
+          left.fileName.localeCompare(
+            right.fileName,
+          )
+        );
+        return Promise.resolve({ entries, warnings: [] });
+      },
+      read: (filePath) =>
+        Promise.resolve(
+          cloneDocument(
+            documents.get(filePath) ?? {
+              comments: [],
+              filePath,
+            },
+          ),
+        ),
+      write: (filePath, document) => {
+        documents.set(filePath, cloneDocument(document));
+        return Promise.resolve();
+      },
+    },
+  };
+};
 
 Deno.test("formats an empty comments file list", () => {
   assertEquals(formatCommentFilesTable([]), "No comment files found.\n");
@@ -256,6 +315,63 @@ Deno.test("adds replies to comments", async () => {
         () => replyToComment(filePath, "1", " "),
         Error,
         "Reply body is required.",
+      );
+    } finally {
+      await removeTempMarkdown(filePath);
+    }
+  });
+});
+
+Deno.test("uses an injected comments store for CLI operations", async () => {
+  await withTempCommentsDirectory(async () => {
+    const filePath = await createTempMarkdown();
+    const { documents, store } = createMemoryCommentsStore();
+    const options = { commentsStore: store };
+    try {
+      documents.set(filePath, {
+        comments: [{
+          body: "Question",
+          createdAt: "2026-06-08T13:00:00.000Z",
+          id: 1,
+          line: 3,
+          originalLine: 3,
+          resolved: false,
+          sourceText: "Body",
+          stale: false,
+          updatedAt: "2026-06-08T13:00:00.000Z",
+        }],
+        filePath,
+      });
+
+      const inspected = await inspectComments(filePath, options);
+      assertEquals(inspected.comments.map((comment) => comment.id), [1]);
+
+      const replied = await replyToComment(
+        filePath,
+        "1",
+        "  Stored elsewhere.  ",
+        options,
+      );
+      assertEquals(replied.replies?.[0].body, "Stored elsewhere.");
+
+      const resolved = await resolveComments(filePath, ["1"], options);
+      assertEquals(resolved.comments[0].resolved, true);
+      assertEquals(
+        (await listCommentFiles(options)).entries[0].openCount,
+        0,
+      );
+
+      assertEquals(await removeComments(filePath, options), filePath);
+      assertEquals(await listCommentFiles(options), {
+        entries: [],
+        warnings: [],
+      });
+      assertEquals(
+        await Deno.stat(getCommentsFilePath(filePath)).catch((error) => {
+          if (error instanceof Deno.errors.NotFound) return undefined;
+          throw error;
+        }),
+        undefined,
       );
     } finally {
       await removeTempMarkdown(filePath);

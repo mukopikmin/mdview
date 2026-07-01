@@ -6,6 +6,39 @@ import type {
 import { basename, join } from "@std/path";
 import { readConfig } from "../../config.ts";
 
+export type CommentsStore = {
+  delete: (filePath: string) => Promise<void>;
+  list: () => Promise<CommentsStoreFileList>;
+  read: (filePath: string) => Promise<PreviewCommentsDocument>;
+  write: (
+    filePath: string,
+    document: PreviewCommentsDocument,
+  ) => Promise<void>;
+};
+
+export type CommentsStoreFile = {
+  commentCount: number;
+  fileName: string;
+  markdownPath: string;
+  openCount: number;
+  updatedAt: string | undefined;
+};
+
+export type CommentsStoreFileList = {
+  entries: CommentsStoreFile[];
+  warnings: string[];
+};
+
+type StoredComment = {
+  resolved?: boolean;
+  updatedAt: string;
+};
+
+type StoredCommentsDocument = {
+  comments: StoredComment[];
+  filePath: string;
+};
+
 const commentsDirectoryName = "sadoku";
 const legacyCommentsDirectoryName = "mdview";
 
@@ -20,6 +53,9 @@ const hashFilePath = (filePath: string): string => {
 
 const sanitizeFileNamePart = (value: string): string =>
   value.replace(/[^A-Za-z0-9._-]/g, "_") || "markdown";
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
 
 const getEnv = (name: string): string | undefined => {
   try {
@@ -131,6 +167,28 @@ const isPreviewCommentReply = (
     typeof reply.updatedAt === "string";
 };
 
+const isStoredComment = (value: unknown): value is StoredComment =>
+  isRecord(value) && typeof value.updatedAt === "string";
+
+const parseStoredCommentsDocument = (
+  text: string,
+): StoredCommentsDocument => {
+  const value = JSON.parse(text) as unknown;
+  if (!isRecord(value) || !Array.isArray(value.comments)) {
+    throw new Error("Invalid comments document.");
+  }
+
+  return {
+    comments: value.comments.filter(isStoredComment),
+    filePath: typeof value.filePath === "string" ? value.filePath : "",
+  };
+};
+
+const latestUpdatedAt = (
+  comments: StoredComment[],
+): string | undefined =>
+  comments.map((comment) => comment.updatedAt).sort().at(-1);
+
 const normalizePreviewComment = (comment: PreviewComment): PreviewComment => ({
   ...comment,
   replies: Array.isArray(comment.replies)
@@ -180,4 +238,62 @@ export const writeCommentsDocument = async (
     getCommentsFilePath(filePath),
     `${JSON.stringify(document, null, 2)}\n`,
   );
+};
+
+export const listCommentsFiles = async (): Promise<CommentsStoreFileList> => {
+  const commentsDirectoryPath = getCommentsDirectoryPath();
+  const directoryEntries = await Array.fromAsync(
+    Deno.readDir(commentsDirectoryPath),
+  ).catch((error) => {
+    if (error instanceof Deno.errors.NotFound) return [];
+    throw error;
+  });
+  const entries: CommentsStoreFile[] = [];
+  const warnings: string[] = [];
+
+  for (const entry of directoryEntries) {
+    if (!entry.isFile || !entry.name.endsWith(".json")) continue;
+
+    const filePath = join(commentsDirectoryPath, entry.name);
+    try {
+      const document = parseStoredCommentsDocument(
+        await Deno.readTextFile(filePath),
+      );
+      entries.push({
+        commentCount: document.comments.length,
+        fileName: basename(filePath),
+        markdownPath: document.filePath,
+        openCount: document.comments.filter((comment) =>
+          comment.resolved !== true
+        ).length,
+        updatedAt: latestUpdatedAt(document.comments),
+      });
+    } catch (error) {
+      warnings.push(
+        `Skipping ${entry.name}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  return {
+    entries: entries.sort((left, right) =>
+      left.fileName.localeCompare(right.fileName)
+    ),
+    warnings,
+  };
+};
+
+export const deleteCommentsDocument = async (
+  filePath: string,
+): Promise<void> => {
+  await Deno.remove(getCommentsFilePath(filePath));
+};
+
+export const fileCommentsStore: CommentsStore = {
+  delete: deleteCommentsDocument,
+  list: listCommentsFiles,
+  read: readCommentsDocument,
+  write: writeCommentsDocument,
 };

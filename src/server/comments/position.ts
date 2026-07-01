@@ -1,5 +1,5 @@
 import type { PreviewComment, PreviewCommentsDocument } from "./types.ts";
-import { readCommentsDocument } from "./storage.ts";
+import { type CommentsStore, fileCommentsStore } from "./storage.ts";
 import { readMarkdownSource } from "../source.ts";
 
 const lineSearchRadius = 40;
@@ -82,9 +82,10 @@ export const resolveCommentPosition = (
 export const readResolvedCommentsDocument = async (
   filePath: string,
   markdownSource = filePath,
+  commentsStore: CommentsStore = fileCommentsStore,
 ): Promise<PreviewCommentsDocument> => {
   const [document, markdown] = await Promise.all([
-    readCommentsDocument(filePath),
+    commentsStore.read(filePath),
     readMarkdownSource(markdownSource),
   ]);
   return {

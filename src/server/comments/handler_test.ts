@@ -1,7 +1,9 @@
 import { assertEquals, assertMatch } from "@std/assert";
 import { dirname } from "@std/path";
 
+import type { CommentsStore } from "./storage.ts";
 import { getCommentsFilePath } from "./storage.ts";
+import type { PreviewCommentsDocument } from "./types.ts";
 import { createPreviewHandler } from "../mod.ts";
 import {
   createTempMarkdown,
@@ -27,6 +29,47 @@ const testWithTempComments = (
   Deno.test(name, async () => {
     await withTempCommentsDirectory(fn);
   });
+};
+
+const createMemoryCommentsStore = (): {
+  documents: Map<string, PreviewCommentsDocument>;
+  store: CommentsStore;
+  writes: PreviewCommentsDocument[];
+} => {
+  const documents = new Map<string, PreviewCommentsDocument>();
+  const writes: PreviewCommentsDocument[] = [];
+  const cloneDocument = (
+    document: PreviewCommentsDocument,
+  ): PreviewCommentsDocument => structuredClone(document);
+
+  return {
+    documents,
+    store: {
+      delete: (filePath) => {
+        if (!documents.delete(filePath)) {
+          return Promise.reject(new Deno.errors.NotFound());
+        }
+        return Promise.resolve();
+      },
+      list: () => Promise.resolve({ entries: [], warnings: [] }),
+      read: (filePath) =>
+        Promise.resolve(
+          cloneDocument(
+            documents.get(filePath) ?? {
+              comments: [],
+              filePath,
+            },
+          ),
+        ),
+      write: (filePath, document) => {
+        const stored = cloneDocument(document);
+        documents.set(filePath, stored);
+        writes.push(stored);
+        return Promise.resolve();
+      },
+    },
+    writes,
+  };
 };
 
 testWithTempComments("validates comment creation input", async () => {
@@ -79,6 +122,68 @@ testWithTempComments("validates comment creation input", async () => {
       );
       assertEquals(await response.text(), testCase.expected);
     }
+  } finally {
+    await removeTempMarkdown(filePath);
+  }
+});
+
+testWithTempComments("uses an injected comments store", async () => {
+  const filePath = await createTempMarkdown();
+  const { documents, store, writes } = createMemoryCommentsStore();
+  const handler = createPreviewHandler(filePath, { commentsStore: store });
+
+  try {
+    const createResponse = await requestComments(
+      handler,
+      "/__sadoku/comments",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ line: 3, body: "Stored elsewhere." }),
+      },
+    );
+    const createdComment = await createResponse.json();
+
+    assertEquals(createResponse.status, 200);
+    assertEquals(writes.length, 1);
+    assertEquals(
+      documents.get(filePath)?.comments[0].body,
+      "Stored elsewhere.",
+    );
+
+    const listResponse = await requestComments(handler, "/__sadoku/comments");
+    const listedDocument = await listResponse.json();
+
+    assertEquals(listResponse.status, 200);
+    assertEquals(listedDocument.filePath, filePath);
+    assertEquals(listedDocument.comments[0].displayLine, 3);
+    assertEquals(listedDocument.comments[0].body, "Stored elsewhere.");
+
+    const updateResponse = await requestComments(
+      handler,
+      `/__sadoku/comments/${createdComment.id}`,
+      {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ body: "Updated elsewhere." }),
+      },
+    );
+    const updatedComment = await updateResponse.json();
+
+    assertEquals(updateResponse.status, 200);
+    assertEquals(updatedComment.body, "Updated elsewhere.");
+    assertEquals(writes.length, 2);
+    assertEquals(
+      documents.get(filePath)?.comments[0].body,
+      "Updated elsewhere.",
+    );
+    assertEquals(
+      await Deno.stat(getCommentsFilePath(filePath)).catch((error) => {
+        if (error instanceof Deno.errors.NotFound) return undefined;
+        throw error;
+      }),
+      undefined,
+    );
   } finally {
     await removeTempMarkdown(filePath);
   }
