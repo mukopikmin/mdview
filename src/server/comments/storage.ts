@@ -6,6 +6,14 @@ import type {
 import { basename, join } from "@std/path";
 import { readConfig } from "../../config.ts";
 
+export type CommentsStore = {
+  read: (filePath: string) => Promise<PreviewCommentsDocument>;
+  write: (
+    filePath: string,
+    document: PreviewCommentsDocument,
+  ) => Promise<void>;
+};
+
 const commentsDirectoryName = "sadoku";
 const legacyCommentsDirectoryName = "mdview";
 
@@ -180,4 +188,9 @@ export const writeCommentsDocument = async (
     getCommentsFilePath(filePath),
     `${JSON.stringify(document, null, 2)}\n`,
   );
+};
+
+export const fileCommentsStore: CommentsStore = {
+  read: readCommentsDocument,
+  write: writeCommentsDocument,
 };

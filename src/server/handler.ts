@@ -1,4 +1,5 @@
 import { handleCommentsRequest } from "./comments/handler.ts";
+import type { CommentsStore } from "./comments/storage.ts";
 import { handlePreviewAssetRequest } from "./preview/assets.ts";
 import { handlePreviewDocumentRequest } from "./preview/document.ts";
 import { createHotReloadEventStream } from "./preview/events.ts";
@@ -11,6 +12,7 @@ import {
 } from "./source.ts";
 
 export type PreviewHandlerOptions = {
+  commentsStore?: CommentsStore;
   onEventStreamClose?: () => void;
   onEventStreamOpen?: () => void;
 };
@@ -89,7 +91,12 @@ async (request) => {
     }
 
     if (pathname.startsWith("/__sadoku/comments")) {
-      return await handleCommentsRequest(request, previewSource, pathname);
+      return await handleCommentsRequest(
+        request,
+        previewSource,
+        pathname,
+        options.commentsStore,
+      );
     }
 
     if (pathname.startsWith("/assets/")) {
