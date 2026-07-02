@@ -6,7 +6,7 @@ import {
   readResolvedCommentsDocument,
   resolveCommentPosition,
 } from "./position.ts";
-import { readCommentsDocument, writeCommentsDocument } from "./storage.ts";
+import { type CommentsStore, fileCommentsStore } from "./storage.ts";
 import { readMarkdownSource } from "../source.ts";
 import {
   methodNotAllowedResponse,
@@ -91,6 +91,7 @@ const parseCommentRoute = (
 const createComment = async (
   request: Request,
   source: PreviewSource,
+  commentsStore: CommentsStore,
 ): Promise<Response> => {
   const body = await parseJsonBody(request);
   const line = parseCommentLine(body);
@@ -101,6 +102,7 @@ const createComment = async (
   if (sourceText === undefined) {
     throw textResponse("Comment range does not exist.", 400);
   }
+  const document = await commentsStore.read(source.commentSource);
   const now = new Date().toISOString();
   const comment: PreviewComment = {
     body: commentBody,
@@ -117,21 +119,21 @@ const createComment = async (
     stale: false,
     updatedAt: now,
   };
-  const document = await readCommentsDocument(source.commentSource);
   const updatedDocument = {
     comments: [...document.comments, comment],
     filePath: source.commentSource,
   };
-  await writeCommentsDocument(source.commentSource, updatedDocument);
+  await commentsStore.write(source.commentSource, updatedDocument);
   return createCommentResponse(comment);
 };
 
 const createReply = async (
   request: Request,
   source: PreviewSource,
+  commentsStore: CommentsStore,
   commentId: string,
 ): Promise<Response> => {
-  const document = await readCommentsDocument(source.commentSource);
+  const document = await commentsStore.read(source.commentSource);
   const index = document.comments.findIndex((comment) =>
     comment.id === commentId
   );
@@ -153,7 +155,7 @@ const createReply = async (
   };
   const comments = [...document.comments];
   comments[index] = updatedComment;
-  await writeCommentsDocument(source.commentSource, {
+  await commentsStore.write(source.commentSource, {
     comments,
     filePath: source.commentSource,
   });
@@ -168,12 +170,13 @@ const createReply = async (
 const updateReply = async (
   request: Request,
   source: PreviewSource,
+  commentsStore: CommentsStore,
   commentId: string,
   replyId: string,
 ): Promise<Response> => {
   const body = await parseJsonBody(request);
   const replyBody = parseCommentBody(body);
-  const document = await readCommentsDocument(source.commentSource);
+  const document = await commentsStore.read(source.commentSource);
   const commentIndex = document.comments.findIndex((comment) =>
     comment.id === commentId
   );
@@ -198,7 +201,7 @@ const updateReply = async (
   };
   const comments = [...document.comments];
   comments[commentIndex] = updatedComment;
-  await writeCommentsDocument(source.commentSource, {
+  await commentsStore.write(source.commentSource, {
     comments,
     filePath: source.commentSource,
   });
@@ -212,10 +215,11 @@ const updateReply = async (
 
 const deleteReply = async (
   source: PreviewSource,
+  commentsStore: CommentsStore,
   commentId: string,
   replyId: string,
 ): Promise<Response> => {
-  const document = await readCommentsDocument(source.commentSource);
+  const document = await commentsStore.read(source.commentSource);
   const commentIndex = document.comments.findIndex((comment) =>
     comment.id === commentId
   );
@@ -234,7 +238,7 @@ const deleteReply = async (
     replies: updatedReplies,
     updatedAt: new Date().toISOString(),
   };
-  await writeCommentsDocument(source.commentSource, {
+  await commentsStore.write(source.commentSource, {
     comments,
     filePath: source.commentSource,
   });
@@ -246,10 +250,11 @@ const deleteReply = async (
 
 const setCommentResolution = async (
   source: PreviewSource,
+  commentsStore: CommentsStore,
   commentId: string,
   resolved: boolean,
 ): Promise<Response> => {
-  const document = await readCommentsDocument(source.commentSource);
+  const document = await commentsStore.read(source.commentSource);
   const index = document.comments.findIndex((comment) =>
     comment.id === commentId
   );
@@ -263,7 +268,7 @@ const setCommentResolution = async (
   };
   const comments = [...document.comments];
   comments[index] = updatedComment;
-  await writeCommentsDocument(source.commentSource, {
+  await commentsStore.write(source.commentSource, {
     comments,
     filePath: source.commentSource,
   });
@@ -278,11 +283,12 @@ const setCommentResolution = async (
 const updateComment = async (
   request: Request,
   source: PreviewSource,
+  commentsStore: CommentsStore,
   commentId: string,
 ): Promise<Response> => {
   const body = await parseJsonBody(request);
   const commentBody = parseCommentBody(body);
-  const document = await readCommentsDocument(source.commentSource);
+  const document = await commentsStore.read(source.commentSource);
   const index = document.comments.findIndex((comment) =>
     comment.id === commentId
   );
@@ -294,7 +300,7 @@ const updateComment = async (
   };
   const comments = [...document.comments];
   comments[index] = updatedComment;
-  await writeCommentsDocument(source.commentSource, {
+  await commentsStore.write(source.commentSource, {
     comments,
     filePath: source.commentSource,
   });
@@ -308,16 +314,17 @@ const updateComment = async (
 
 const deleteComment = async (
   source: PreviewSource,
+  commentsStore: CommentsStore,
   commentId: string,
 ): Promise<Response> => {
-  const document = await readCommentsDocument(source.commentSource);
+  const document = await commentsStore.read(source.commentSource);
   const comments = document.comments.filter((comment) =>
     comment.id !== commentId
   );
   if (comments.length === document.comments.length) {
     return createCommentNotFoundResponse();
   }
-  await writeCommentsDocument(source.commentSource, {
+  await commentsStore.write(source.commentSource, {
     comments,
     filePath: source.commentSource,
   });
@@ -331,6 +338,7 @@ export const handleCommentsRequest = async (
   request: Request,
   source: PreviewSource,
   pathname: string,
+  commentsStore: CommentsStore = fileCommentsStore,
 ): Promise<Response> => {
   const commentsPath = "/__sadoku/comments";
   if (pathname === commentsPath && request.method === "GET") {
@@ -338,12 +346,13 @@ export const handleCommentsRequest = async (
       await readResolvedCommentsDocument(
         source.commentSource,
         source.documentSource,
+        commentsStore,
       ),
     );
   }
 
   if (pathname === commentsPath && request.method === "POST") {
-    return await createComment(request, source);
+    return await createComment(request, source, commentsStore);
   }
 
   const route = parseCommentRoute(pathname, commentsPath);
@@ -356,33 +365,40 @@ export const handleCommentsRequest = async (
   ) {
     return await setCommentResolution(
       source,
+      commentsStore,
       route.commentId,
       route.action === "resolve",
     );
   }
 
   if (request.method === "POST" && route.action === "replies") {
-    return await createReply(request, source, route.commentId);
+    return await createReply(request, source, commentsStore, route.commentId);
   }
 
   if (route.action?.startsWith("replies/")) {
     const replyId = route.action.slice("replies/".length);
     if (replyId === "") return createReplyNotFoundResponse();
     if (request.method === "PUT") {
-      return await updateReply(request, source, route.commentId, replyId);
+      return await updateReply(
+        request,
+        source,
+        commentsStore,
+        route.commentId,
+        replyId,
+      );
     }
     if (request.method === "DELETE") {
-      return await deleteReply(source, route.commentId, replyId);
+      return await deleteReply(source, commentsStore, route.commentId, replyId);
     }
     return methodNotAllowedResponse();
   }
 
   if (route.action !== undefined) return notFoundResponse();
   if (request.method === "PUT") {
-    return await updateComment(request, source, route.commentId);
+    return await updateComment(request, source, commentsStore, route.commentId);
   }
   if (request.method === "DELETE") {
-    return await deleteComment(source, route.commentId);
+    return await deleteComment(source, commentsStore, route.commentId);
   }
 
   return methodNotAllowedResponse();
