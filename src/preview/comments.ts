@@ -1,15 +1,17 @@
 export type PreviewCommentReply = {
   body: string;
   createdAt: string;
-  id: number;
+  id: string;
   updatedAt: string;
 };
 
 export type PreviewComment = {
   body: string;
   createdAt: string;
-  id: number;
+  endLine?: number;
+  id: string;
   line: number;
+  originalEndLine?: number;
   originalLine: number;
   replies?: PreviewCommentReply[];
   resolved: boolean;
@@ -36,11 +38,12 @@ export const loadComments = async (): Promise<PreviewCommentsDocument> => {
 export const createComment = async (
   line: number,
   body: string,
+  endLine?: number,
 ): Promise<PreviewComment> => {
   const response = await fetch("/__sadoku/comments", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ line, body }),
+    body: JSON.stringify({ line, body, ...(endLine ? { endLine } : {}) }),
   });
   if (!response.ok) {
     throw new Error(`Failed to create comment: ${response.status}`);
@@ -49,7 +52,7 @@ export const createComment = async (
 };
 
 export const createReply = async (
-  commentId: number,
+  commentId: string,
   body: string,
 ): Promise<PreviewComment> => {
   const response = await fetch(
@@ -67,8 +70,8 @@ export const createReply = async (
 };
 
 export const updateReply = async (
-  commentId: number,
-  replyId: number,
+  commentId: string,
+  replyId: string,
   body: string,
 ): Promise<PreviewComment> => {
   const response = await fetch(
@@ -88,8 +91,8 @@ export const updateReply = async (
 };
 
 export const deleteReply = async (
-  commentId: number,
-  replyId: number,
+  commentId: string,
+  replyId: string,
 ): Promise<void> => {
   const response = await fetch(
     `/__sadoku/comments/${encodeURIComponent(commentId)}/replies/${
@@ -103,7 +106,7 @@ export const deleteReply = async (
 };
 
 export const updateComment = async (
-  id: number,
+  id: string,
   body: string,
 ): Promise<PreviewComment> => {
   const response = await fetch(`/__sadoku/comments/${encodeURIComponent(id)}`, {
@@ -117,7 +120,7 @@ export const updateComment = async (
   return await response.json() as PreviewComment;
 };
 
-export const resolveComment = async (id: number): Promise<PreviewComment> => {
+export const resolveComment = async (id: string): Promise<PreviewComment> => {
   const response = await fetch(
     `/__sadoku/comments/${encodeURIComponent(id)}/resolve`,
     {
@@ -130,7 +133,7 @@ export const resolveComment = async (id: number): Promise<PreviewComment> => {
   return await response.json() as PreviewComment;
 };
 
-export const reopenComment = async (id: number): Promise<PreviewComment> => {
+export const reopenComment = async (id: string): Promise<PreviewComment> => {
   const response = await fetch(
     `/__sadoku/comments/${encodeURIComponent(id)}/reopen`,
     {
@@ -143,7 +146,7 @@ export const reopenComment = async (id: number): Promise<PreviewComment> => {
   return await response.json() as PreviewComment;
 };
 
-export const deleteComment = async (id: number): Promise<void> => {
+export const deleteComment = async (id: string): Promise<void> => {
   const response = await fetch(`/__sadoku/comments/${encodeURIComponent(id)}`, {
     method: "DELETE",
   });

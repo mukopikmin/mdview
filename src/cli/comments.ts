@@ -87,15 +87,9 @@ export const resolveComments = async (
   const source = createPreviewSource(filePath);
   const commentsStore = getCommentsStore(options);
   const document = await commentsStore.read(source.commentSource);
-  const requestedIdEntries = commentIds.map((id) => ({
-    input: id,
-    value: Number(id),
-  }));
-  const requestedIds = new Set(requestedIdEntries.map((entry) => entry.value));
+  const requestedIds = new Set(commentIds);
   const knownIds = new Set(document.comments.map((comment) => comment.id));
-  const missingIds = requestedIdEntries
-    .filter((entry) => Number.isNaN(entry.value) || !knownIds.has(entry.value))
-    .map((entry) => entry.input);
+  const missingIds = [...requestedIds].filter((id) => !knownIds.has(id));
   if (missingIds.length > 0) {
     throw new Error(`Comment not found: ${missingIds.join(", ")}`);
   }
@@ -137,9 +131,8 @@ export const replyToComment = async (
   const source = createPreviewSource(filePath);
   const commentsStore = getCommentsStore(options);
   const document = await commentsStore.read(source.commentSource);
-  const parsedCommentId = Number(commentId);
   const index = document.comments.findIndex((comment) =>
-    comment.id === parsedCommentId
+    comment.id === commentId
   );
   if (index < 0) {
     throw new Error(`Comment not found: ${commentId}`);
@@ -149,10 +142,7 @@ export const replyToComment = async (
   const reply: PreviewCommentReply = {
     body: replyBody,
     createdAt: now,
-    id: Math.max(
-      0,
-      ...(document.comments[index].replies ?? []).map((reply) => reply.id),
-    ) + 1,
+    id: crypto.randomUUID(),
     updatedAt: now,
   };
   const updatedComment = {

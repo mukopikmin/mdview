@@ -149,7 +149,7 @@ const createEmptyCommentsDocument = (
 const isPreviewComment = (value: unknown): value is PreviewComment => {
   if (typeof value !== "object" || value === null) return false;
   const comment = value as Partial<PreviewComment>;
-  return typeof comment.id === "number" &&
+  return typeof comment.id === "string" &&
     Number.isInteger(comment.line) &&
     typeof comment.body === "string" &&
     typeof comment.createdAt === "string" &&
@@ -161,7 +161,7 @@ const isPreviewCommentReply = (
 ): value is PreviewCommentReply => {
   if (typeof value !== "object" || value === null) return false;
   const reply = value as Partial<PreviewCommentReply>;
-  return typeof reply.id === "number" &&
+  return typeof reply.id === "string" &&
     typeof reply.body === "string" &&
     typeof reply.createdAt === "string" &&
     typeof reply.updatedAt === "string";
@@ -189,13 +189,30 @@ const latestUpdatedAt = (
 ): string | undefined =>
   comments.map((comment) => comment.updatedAt).sort().at(-1);
 
-const normalizePreviewComment = (comment: PreviewComment): PreviewComment => ({
-  ...comment,
-  replies: Array.isArray(comment.replies)
-    ? comment.replies.filter(isPreviewCommentReply)
-    : [],
-  resolved: comment.resolved === true,
-});
+const normalizePreviewComment = (comment: PreviewComment): PreviewComment => {
+  const originalLine = Number.isInteger(comment.originalLine)
+    ? comment.originalLine
+    : comment.line;
+  const endLine = comment.endLine ?? comment.line;
+  const originalEndLine = comment.originalEndLine ?? originalLine;
+  const normalizedEndLine = Number.isInteger(endLine) && endLine >= comment.line
+    ? endLine
+    : comment.line;
+  const normalizedOriginalEndLine = Number.isInteger(originalEndLine) &&
+      originalEndLine >= originalLine
+    ? originalEndLine
+    : originalLine;
+  return {
+    ...comment,
+    endLine: normalizedEndLine,
+    originalEndLine: normalizedOriginalEndLine,
+    originalLine,
+    replies: Array.isArray(comment.replies)
+      ? comment.replies.filter(isPreviewCommentReply)
+      : [],
+    resolved: comment.resolved === true,
+  };
+};
 
 export const readCommentsDocument = async (
   filePath: string,

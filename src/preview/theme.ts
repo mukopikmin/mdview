@@ -381,15 +381,14 @@ export const previewThemeCss = `
         background: var(--color-border);
       }
 
-      .commentable-block {
-        position: relative;
-        margin-left: -42px;
-        padding-left: 42px;
-      }
-
       .commentable-content {
+        cursor: pointer;
         isolation: isolate;
         position: relative;
+      }
+
+      .comment-markdown-body {
+        display: contents;
       }
 
       .commentable-content::before {
@@ -407,48 +406,29 @@ export const previewThemeCss = `
         background: color-mix(in srgb, var(--color-accent) 8%, transparent);
       }
 
+      .commentable-block-selected > .commentable-content::before {
+        background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+      }
+
       .commentable-block:hover > .commentable-content::before,
       .commentable-block:focus-within > .commentable-content::before {
         background: color-mix(in srgb, var(--color-accent) 14%, transparent);
       }
 
-      .comment-line-button {
+      .comment-selection-button {
         position: absolute;
-        top: 0.1rem;
-        left: -34px;
-        display: inline-grid;
-        place-items: center;
-        width: 24px;
-        height: 24px;
-        border: 1px solid var(--color-border);
+        z-index: 1;
+        top: 0;
+        right: 0;
+        border: 1px solid var(--color-accent);
         border-radius: 6px;
-        background: var(--color-canvas);
-        color: var(--color-text-muted);
+        background: var(--color-accent);
+        color: #ffffff;
         cursor: pointer;
         font: inherit;
-        font-size: 1rem;
-        line-height: 1;
-        opacity: 0;
-      }
-
-      .commentable-block:hover > .commentable-content > .comment-line-button,
-      .comment-line-button:focus-visible,
-      .commentable-block:has(.comment-thread) > .commentable-content > .comment-line-button {
-        opacity: 1;
-      }
-
-      .comment-line-button:hover,
-      .comment-line-button:focus-visible {
-        border-color: var(--color-accent);
-        color: var(--color-accent);
-      }
-
-      .comment-line-button::before {
-        content: "+";
-      }
-
-      .commentable-list-item > .commentable-content > .comment-line-button {
-        left: calc(-34px - 2em);
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 3px 8px;
       }
 
       .comment-thread {
@@ -744,17 +724,6 @@ export const previewThemeCss = `
         header {
           align-items: stretch;
           flex-direction: column;
-        }
-
-        .commentable-block {
-          margin-left: 0;
-          padding-left: 0;
-        }
-
-        .comment-line-button {
-          position: static;
-          margin: 0 0 6px;
-          opacity: 1;
         }
 
         .comment-item-header {
